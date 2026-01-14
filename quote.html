@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Request a Quote | DFW Smart Solutions</title>
+    <link rel="stylesheet" href="site/assets/css/style.css">
+  </head>
+
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <a class="brand" href="index.html">DFW Smart Solutions</a>
+
+        <nav class="nav">
+          <a href="services.html">Services</a>
+          <a href="projects.html">Projects</a>
+          <a href="about.html">About</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">
+          ☰
+        </button>
+
+        <a class="cta" href="quote.html">Get a quote</a>
+      </div>
+    </header>
+
+    <main>
+      <h1>Request a Quote</h1>
+      <p>Tell us what you need and we’ll follow up with next steps.</p>
+
+      <form>
+        <h2>Contact</h2>
+
+        <label for="name">Name:</label><br/>
+        <input type="text" id="name" name="name" autocomplete="name" required /><br /><br />
+
+        <label for="email">Email:</label><br />
+        <input type="email" id="email" name="email" autocomplete="email" required /><br /><br />
+
+        <label for="phone">Phone:</label><br />
+        <input type="tel" id="phone" name="phone" autocomplete="tel" required /><br /><br />
+
+        <label for="company">Company (optional):</label><br />
+        <input type="text" id="company" name="company" /><br /><br />
+
+        <h2>Site</h2>
+
+        <label for="site_type">Site type:</label><br />
+        <select id="site_type" name="site_type" required>
+          <option value="Residential">Residential</option>
+          <option value="Commercial">Commercial</option>
+        </select><br /><br />
+
+        <label for="address">Job address (or city):</label><br />
+        <input
+          type="text"
+          id="address"
+          name="address"
+          placeholder="City, TX (or full address)"
+          required
+        /><br /><br />
+
+        <label for="access_window">Access window (optional):</label><br />
+        <input
+          type="text"
+          id="access_window"
+          name="access_window"
+          placeholder="e.g., Weekdays after 5pm / Sat 10–2"
+        /><br /><br />
+
+        <h2>Services requested</h2>
+        <label><input type="checkbox" name="svc_ethernet" value="Y"> Ethernet / Cabling</label><br />
+        <label><input type="checkbox" name="svc_wifi" value="Y"> Wi-Fi / Network Setup</label><br />
+        <label><input type="checkbox" name="svc_rack" value="Y"> Rack / Patch Panel / Labeling</label><br />
+        <label><input type="checkbox" name="svc_tv" value="Y"> TV Mounting & Cable Concealment</label><br />
+        <label><input type="checkbox" name="svc_smarthome" value="Y"> Smart Home Setup & Automations</label><br />
+        <label><input type="checkbox" name="svc_troubleshoot" value="Y"> Troubleshooting / Service Call</label><br />
+        <br />
+
+        <h2>Quick details (optional but helps accuracy)</h2>
+
+        <label for="drops_count">Ethernet drops count:</label><br />
+        <input type="number" id="drops_count" name="drops_count" min="0" step="1" value="0" /><br /><br />
+
+        <label for="structure">Building type / floors:</label><br />
+        <select id="structure" name="structure">
+          <option value="">Select</option>
+          <option value="single_story">Single-story</option>
+          <option value="two_story">Two-story</option>
+          <option value="apartment">Apartment/Condo</option>
+          <option value="commercial">Commercial</option>
+        </select><br /><br />
+
+        <label for="access">Access available?</label><br />
+        <select id="access" name="access">
+          <option value="">Select</option>
+          <option value="attic">Attic access</option>
+          <option value="crawlspace">Crawlspace access</option>
+          <option value="both">Both</option>
+          <option value="none">No clear access / not sure</option>
+        </select><br /><br />
+
+        <label for="rack_existing">Existing rack/closet?</label><br />
+        <select id="rack_existing" name="rack_existing">
+          <option value="">Select</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select><br /><br />
+
+        <label for="rack_ports">Rack/patch panel ports count:</label><br />
+        <input type="number" id="rack_ports" name="rack_ports" min="0" step="1" value="0" /><br /><br />
+
+        <label for="wifi_issue">Wi-Fi main issue:</label><br />
+        <select id="wifi_issue" name="wifi_issue">
+          <option value="">Select</option>
+          <option value="dead_zones">Dead zones</option>
+          <option value="slow">Slow speeds</option>
+          <option value="drops">Disconnects</option>
+          <option value="new_setup">New setup</option>
+          <option value="other">Other</option>
+        </select><br /><br />
+
+        <label for="sqft">Approx. square footage:</label><br />
+        <input type="number" id="sqft" name="sqft" min="0" step="50" /><br /><br />
+
+        <label for="tv_count">TV count:</label><br />
+        <input type="number" id="tv_count" name="tv_count" min="0" step="1" value="0" /><br /><br />
+
+        <label for="wall_type">Wall type (TV mounting):</label><br />
+        <select id="wall_type" name="wall_type">
+          <option value="">Select</option>
+          <option value="drywall">Drywall</option>
+          <option value="brick">Brick</option>
+          <option value="concrete">Concrete</option>
+          <option value="other">Other / not sure</option>
+        </select><br /><br />
+
+        <label for="conceal">Cable concealment?</label><br />
+        <select id="conceal" name="conceal">
+          <option value="">Select</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select><br /><br />
+
+        <label for="smarthome_type">Smart home devices (optional):</label><br />
+        <input
+          type="text"
+          id="smarthome_type"
+          name="smarthome_type"
+          placeholder="Lights, thermostat, locks, voice assistant, etc."
+        /><br /><br />
+
+        <h2>Notes</h2>
+        <label for="details">Describe the full scope of your project:</label><br />
+        <textarea
+          id="details"
+          name="details"
+          rows="6"
+          minlength="20"
+          placeholder="Rooms for drops, access (attic/crawlspace), wall type, equipment you have, timing constraints, etc."
+          required
+        ></textarea><br /><br />
+
+        <input type="hidden" name="source" value="rfq_form_v2" />
+        <button type="submit">Send Request</button>
+      </form>
+    </main>
+
+    <!--JS Hooks-->
+    <script src="site/assets/js/main.js"></script>
+    <script src="site/assets/js/quote.js"></script>
+
+    <footer><p>© 2026 DFW Smart Solutions. Serving the Dallas–Fort Worth Metroplex.</p></footer>
+  </body>
+</html>
