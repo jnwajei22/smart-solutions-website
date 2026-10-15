@@ -1,12 +1,14 @@
 -- Run once in a NEW Supabase project. Server mutations use the service role only.
 begin;
+create schema if not exists private;
+revoke all on schema private from public,anon,authenticated;
 create table public.profiles (
  id uuid primary key references auth.users(id) on delete cascade,
  role text not null default 'customer' check(role in ('customer','admin'))
 );
-create function public.new_profile() returns trigger language plpgsql security definer set search_path = public as $$
+create function private.new_profile() returns trigger language plpgsql security definer set search_path = public as $$
 begin insert into public.profiles(id) values(new.id);return new;end;$$;
-create trigger on_auth_user_created after insert on auth.users for each row execute function public.new_profile();
+create trigger on_auth_user_created after insert on auth.users for each row execute function private.new_profile();
 insert into public.profiles(id) select id from auth.users on conflict do nothing;
 create table public.requests (
  id uuid primary key default gen_random_uuid(), customer_id uuid not null references auth.users(id),
@@ -45,7 +47,7 @@ create table public.payments (
 create index payments_customer on public.payments(customer_id);
 create table public.webhook_events (id text primary key,created_at timestamptz not null default now());
 create table public.request_limits (customer_id uuid primary key references auth.users(id),window_start timestamptz not null default now(),used integer not null default 0);
-create function public.is_business_admin() returns boolean language sql stable security definer set search_path = public as $$select exists(select 1 from public.profiles where id=auth.uid() and role='admin');$$;
+create function public.is_business_admin() returns boolean language sql stable security invoker set search_path = public as $$select exists(select 1 from public.profiles where id=(select auth.uid()) and role='admin');$$;
 alter table public.messages enable row level security;
 alter table public.profiles enable row level security;
 alter table public.requests enable row level security;
@@ -54,16 +56,16 @@ alter table public.payments enable row level security;
 alter table public.payment_attempts enable row level security;
 alter table public.webhook_events enable row level security;
 alter table public.request_limits enable row level security;
-create policy messages_read on public.messages for select to authenticated using(public.is_business_admin() or exists(select 1 from public.requests where requests.id=messages.request_id and requests.customer_id=auth.uid()));
-create policy own_profile_read on public.profiles for select to authenticated using(id=auth.uid());
-create policy requests_read on public.requests for select to authenticated using(customer_id=auth.uid() or public.is_business_admin());
-create policy invoices_read on public.invoices for select to authenticated using(customer_id=auth.uid() or public.is_business_admin());
-create policy payments_read on public.payments for select to authenticated using(customer_id=auth.uid() or public.is_business_admin());
+create policy messages_read on public.messages for select to authenticated using((select public.is_business_admin()) or exists(select 1 from public.requests where requests.id=messages.request_id and requests.customer_id=(select auth.uid())));
+create policy own_profile_read on public.profiles for select to authenticated using(id=(select auth.uid()));
+create policy requests_read on public.requests for select to authenticated using(customer_id=(select auth.uid()) or (select public.is_business_admin()));
+create policy invoices_read on public.invoices for select to authenticated using(customer_id=(select auth.uid()) or (select public.is_business_admin()));
+create policy payments_read on public.payments for select to authenticated using(customer_id=(select auth.uid()) or (select public.is_business_admin()));
 revoke all on public.profiles,public.requests,public.messages,public.invoices,public.payments,public.payment_attempts,public.webhook_events,public.request_limits from anon,authenticated;
 grant select on public.profiles,public.requests,public.messages,public.invoices,public.payments to authenticated;
 grant all on public.profiles,public.requests,public.messages,public.invoices,public.payments,public.payment_attempts,public.webhook_events,public.request_limits to service_role;
 grant usage,select on public.invoice_number_seq to service_role;
-create function public.consume_request_limit(p_user uuid) returns boolean language plpgsql security definer set search_path = public as $$
+create function public.consume_request_limit(p_user uuid) returns boolean language plpgsql security invoker set search_path = public as $$
 declare lim public.request_limits;
 begin
  insert into public.request_limits(customer_id) values(p_user) on conflict do nothing;
@@ -72,7 +74,7 @@ begin
  if lim.used>=10 then return false;end if;
  update public.request_limits set used=used+1 where customer_id=p_user;return true;
 end;$$;
-create function public.issue_quote(p_request uuid,p_title text,p_items jsonb,p_total integer,p_deposit integer,p_due date,p_terms text) returns uuid language plpgsql security definer set search_path = public as $$
+create function public.issue_quote(p_request uuid,p_title text,p_items jsonb,p_total integer,p_deposit integer,p_due date,p_terms text) returns uuid language plpgsql security invoker set search_path = public as $$
 declare job public.requests; invoice_id uuid; calculated numeric; item jsonb;
 begin
  select * into strict job from public.requests where id=p_request for update;
@@ -87,7 +89,7 @@ begin
  update public.requests set status='quoted' where id=job.id;
  return invoice_id;
 end;$$;
-create function public.reserve_checkout(p_invoice uuid,p_customer uuid,p_amount integer,p_kind text) returns table(id uuid,session_id text) language plpgsql security definer set search_path = public as $$
+create function public.reserve_checkout(p_invoice uuid,p_customer uuid,p_amount integer,p_kind text) returns table(id uuid,session_id text) language plpgsql security invoker set search_path = public as $$
 declare inv public.invoices; expected integer; attempt public.payment_attempts;
 begin
  select * into strict inv from public.invoices where public.invoices.id=p_invoice for update;
@@ -103,7 +105,7 @@ begin
  insert into public.payment_attempts(invoice_id,customer_id,amount_cents,kind) values(p_invoice,p_customer,p_amount,p_kind) returning * into attempt;
  return query select attempt.id,attempt.session_id;
 end;$$;
-create function public.record_payment(p_event text,p_attempt uuid,p_session text,p_intent text,p_amount integer) returns void language plpgsql security definer set search_path = public as $$
+create function public.record_payment(p_event text,p_attempt uuid,p_session text,p_intent text,p_amount integer) returns void language plpgsql security invoker set search_path = public as $$
 declare attempt public.payment_attempts; inv public.invoices; paid integer;
 begin
  if exists(select 1 from public.webhook_events where id=p_event) then return;end if;
@@ -116,7 +118,7 @@ begin
  update public.invoices set paid_cents=paid,status=case when paid>=total_cents then 'paid' else 'issued' end where id=inv.id;
  insert into public.webhook_events(id) values(p_event) on conflict do nothing;
 end;$$;
-create function public.record_refund(p_event text,p_intent text,p_refunded integer) returns void language plpgsql security definer set search_path = public as $$
+create function public.record_refund(p_event text,p_intent text,p_refunded integer) returns void language plpgsql security invoker set search_path = public as $$
 declare payment public.payments; paid integer;
 begin
  if exists(select 1 from public.webhook_events where id=p_event) then return;end if;
@@ -129,11 +131,14 @@ begin
  update public.invoices set paid_cents=paid,status=case when paid>=total_cents then 'paid' else 'issued' end where id=payment.invoice_id;
  insert into public.webhook_events(id) values(p_event) on conflict do nothing;
 end;$$;
-revoke all on function public.new_profile() from public,anon,authenticated;
+revoke all on function private.new_profile() from public,anon,authenticated;
 revoke all on function public.is_business_admin() from public,anon;
 grant execute on function public.is_business_admin() to authenticated,service_role;
 revoke all on function public.consume_request_limit(uuid),public.issue_quote(uuid,text,jsonb,integer,integer,date,text),public.reserve_checkout(uuid,uuid,integer,text),public.record_payment(text,uuid,text,text,integer),public.record_refund(text,text,integer) from public,anon,authenticated;
 grant execute on function public.consume_request_limit(uuid),public.issue_quote(uuid,text,jsonb,integer,integer,date,text),public.reserve_checkout(uuid,uuid,integer,text),public.record_payment(text,uuid,text,text,integer),public.record_refund(text,text,integer) to service_role;
+create index messages_author_created on public.messages(author_id,created_at desc);
+create index payment_attempts_customer on public.payment_attempts(customer_id);
+create index payments_invoice on public.payments(invoice_id);
 commit;
 -- After creating and verifying YOUR account, grant administration in SQL:
 -- update public.profiles set role='admin' where id=(select id from auth.users where email='YOUR_VERIFIED_EMAIL');
