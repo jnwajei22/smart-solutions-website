@@ -1,14 +1,57 @@
-# DFW Smart Solutions Site
+# DFW Smart Solutions customer platform
 
-Next.js marketing site modeled after the detailing website structure.
+Next.js 16 / React 19, designed for the repository's existing Vercel deployment. Green (`#004225`), gold (`#C9A227`), and warm neutral branding. No customer or business credentials are included.
 
-## Run locally
-```bash
-npm install
-npm run dev
-```
+## Included
 
-## Notes
-- Replace placeholder phone/email before launch.
-- Keep regulated security wording conservative until licensing is finalized.
-- Built for Vercel deployment.
+- Responsive public website and service catalog.
+- Service request form with a tab-local draft preserved during sign-in.
+- Email/password accounts, verification, sign-out, and password recovery through Supabase Auth.
+- Customer workspace: project status, conversations/change requests, quote approval, deposit or balance checkout, printable invoices, account balance, payment/refund ledger.
+- Administrator workspace: incoming requests, customer details, messages, status updates, itemized quote builder, project-specific terms and deposit amount.
+- Postgres schema with row-level access controls; privileged mutation functions are callable only by the server service role.
+- Stripe Checkout; signed webhooks, idempotent payment records, refund reconciliation, and serialized checkout reservation.
+- Explicit sample portal at `/preview`. Demo records are fictional and no mutations/payments are enabled there.
+
+## Local work
+
+Node 24 recommended for the TypeScript test runner. `npm ci`, copy `.env.example` to `.env.local`, then `npm run dev`. `npm run build` produces a deployable Next.js application. `npm test` runs money calculations and an isolated PostgreSQL-compatible database integration suite using PGlite. Never point tests at a live database.
+
+Without configured credentials the public pages and sample portal render; account creation, request persistence, and payments remain unavailable. This is intentional, not a simulated backend.
+
+## Live configuration
+
+1. Create a Supabase project. Run `supabase/schema.sql` ONCE against a new database. Do not run it over an existing application schema without reviewing a migration.
+2. Set the keys in `.env.example` in Vercel. `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are public; the service-role, Stripe, and webhook keys must remain server-only. Set `NEXT_PUBLIC_SITE_URL` to the exact canonical origin (no alternate preview URL) for each deployment environment; this controls redirects and write-request origin verification. Public environment values require a rebuild.
+3. Supabase Auth: enable email/password and email confirmation, set the Site URL and allowed redirect URLs to the deployment's `/auth/confirm` and `/auth/confirm?next=/reset-password`. Set minimum password length to 12. Configure production SMTP before customer rollout. Apply rate limits/CAPTCHA as appropriate in Supabase.
+4. Recommended confirmation email link: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup`. Recovery link: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`. The callback also accepts Supabase PKCE `code` redirects.
+5. Create and verify Justin's account. In Supabase SQL, promote only the verified owner's ID using the commented statement at the end of `schema.sql`. Browser users cannot edit their role. `/admin` is protected on the server, not just hidden by navigation.
+6. Connect Stripe in TEST mode first. Set a test secret and register `/api/stripe/webhook` for `checkout.session.completed`, `checkout.session.async_payment_succeeded`, and `charge.refunded`. Set the endpoint signing secret. Checkout filters to card payments; no subscription is created and no card data is stored in this app.
+7. Complete the test-mode acceptance sequence below. Then activate Stripe using the business's legal and banking details. Live-mode endpoint and keys are separate from test-mode credentials. Do not mix test/live data in a production ledger.
+8. Confirm business contact channels, written project terms, deposit/refund policy, service availability, and appropriate coverage before inviting real customers. The site does not claim licensing, reviews, completed jobs, or response-time guarantees.
+
+## Real-account acceptance test (requires configured services)
+
+Create verified accounts A and B. Submit A's project. As admin, issue an itemized quote, project terms, and deposit. As A, approve and pay using a Stripe test card. Confirm the webhook records the deposit once, and that the balance is total minus deposit. Pay the balance, confirm paid status, then issue a test refund from Stripe and confirm reconciliation. Re-send webhook events and confirm no duplicate credit. B must not see A's projects, conversations, or invoices, including direct invoice URLs. Verify confirmation/recovery email links, sign-out, project replies, and print output.
+
+## Operational boundaries
+
+- Requests require a verified account. Quotes are issued manually; prices are not inferred automatically from customer descriptions.
+- Scheduling changes/cancellations are conversation requests. Admin changes project status after confirming the arrangement; this is not a calendar booking engine.
+- Issued quote amounts/terms are immutable in the UI; one invoice per request. Revised scope should be a new request/quote. Void/credit-note workflows and tax automation are not implemented.
+- Payments are against issued invoices only. Deposits are credited to invoice totals. Customer-entered amounts are never accepted.
+- Refunds are initiated in Stripe, then reconciled to the portal. A refund reopens the balance under the current scope; the operator must review cancellation/refund outcomes before requesting further payment. Full cancellation accounting needs a future void/credit-note workflow.
+- No automatic lead/invoice/message email notifications yet. New requests and replies are visible in `/admin`; account verification and recovery emails come from Supabase. Monitor the dashboard during the launch sprint.
+- No uploads, customer device secrets, recurring billing, or third-party customer import.
+- Database selections currently load all accessible records; add pagination as volume grows.
+- No real Supabase/Stripe/Vercel credentials were available during implementation. Production-provider end-to-end verification is therefore still required.
+
+## Payment reconciliation
+
+Reservations serialize checkout per invoice. An unconfirmed attempt remains locked even after its local timestamp expires; only a verified expired Stripe session or a completed payment releases it. This avoids permitting a second charge when a paid session's webhook is delayed. An open existing checkout can be resumed. A completed paid session is reconciled from the Stripe API when the customer retries.
+
+If Stripe creation fails ambiguously before a session ID is stored, the attempt stays locked. Do not blindly delete it: inspect Stripe using the attempt UUID (the idempotency key and metadata) and confirm no payable/paid session exists before setting it completed. Webhook failures return 500 so Stripe retries; monitor failed endpoint deliveries and Vercel logs. Keep the signing secret server-only.
+
+## Verification limits
+
+Build/type checking and local database integration checks are automated. This environment does not provide the supported browser QA integration, so responsive visual behavior, keyboard navigation, live auth emails, and Stripe-hosted checkout must also be verified in the Vercel preview before production launch.
