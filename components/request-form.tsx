@@ -23,6 +23,8 @@ export function RequestForm() {
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem("dfw-request");
+      // Browser storage is only available after hydration.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved) setForm({ ...initial, ...JSON.parse(saved) });
       else if (services.some((s) => s.id === params.get("service")))
         setForm((f) => ({ ...f, service: params.get("service")! }));
