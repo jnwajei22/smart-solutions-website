@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { adminClient, currentUser, configured } from "../../../lib/supabase";
 import { bodyJSON, fail, sameOrigin } from "../../../lib/http";
+import { trustedRequestOrigin } from "../../../lib/origin";
 import { amountToCharge } from "../../../lib/billing";
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return fail("Request origin not allowed.", 403);
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
         409,
       );
     }
-    const origin = new URL(process.env.NEXT_PUBLIC_SITE_URL!).origin;
+    const origin = trustedRequestOrigin(request)!;
     let session;
     try {
       session = await stripe.checkout.sessions.create(

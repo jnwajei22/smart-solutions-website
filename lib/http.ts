@@ -1,9 +1,8 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import { trustedRequestOrigin } from "./origin";
 export function sameOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  const expected = process.env.NEXT_PUBLIC_SITE_URL;
-  return Boolean(expected && origin === new URL(expected).origin);
+  return trustedRequestOrigin(request) !== null;
 }
 export async function bodyJSON(request: Request) {
   const text = await request.text();
