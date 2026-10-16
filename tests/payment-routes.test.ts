@@ -16,6 +16,10 @@ async function route(
   path: string,
   dependencies: Record<string, Record<string, unknown>>,
 ) {
+  dependencies = {
+    "../../../lib/observability": { logFailure: () => {} },
+    ...dependencies,
+  };
   let source = await readFile(new URL(`../${path}`, import.meta.url), "utf8");
   for (const [specifier, exports] of Object.entries(dependencies)) {
     const key = `module-${moduleNumber++}`;

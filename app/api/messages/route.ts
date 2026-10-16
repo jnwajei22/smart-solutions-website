@@ -1,3 +1,4 @@
+import { logFailure } from "../../../lib/observability";
 import { NextResponse } from "next/server";
 import { currentUser, adminClient, configured } from "../../../lib/supabase";
 import { bodyJSON, fail, sameOrigin } from "../../../lib/http";
@@ -35,7 +36,8 @@ export async function POST(request: Request) {
       .insert({ request_id: job.id, author_id: user.id, body: b.body.trim() });
     if (error) throw error;
     return NextResponse.json({ saved: true });
-  } catch {
+  } catch (error) {
+    logFailure("message_save_failed", error);
     return fail("Unable to save your message. Please try again.", 500);
   }
 }

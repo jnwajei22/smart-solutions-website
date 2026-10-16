@@ -1,4 +1,6 @@
 import { Header, Footer } from "../../components/brand";
+import Link from "next/link";
+import { SupportContact } from "../../components/support-contact";
 export const metadata = { title: "Service terms" };
 export default function Terms() {
   return (
@@ -22,6 +24,15 @@ export default function Terms() {
           cancellation, refund, and any special-order material terms with you in
           writing. A deposit is not an additional fee.
         </p>
+        <h2>Changes, cancellations, and refunds</h2>
+        <p>
+          Request changes or cancellation in the project conversation as soon as
+          possible. Any applicable material commitments, cancellation charges,
+          or refund conditions must be stated in your project’s written terms
+          before payment. We review the request and confirm the outcome in
+          writing; submitting a message does not automatically cancel work or
+          issue a refund.
+        </p>
         <h2>Site access and equipment</h2>
         <p>
           Customers must arrange authorized access to the property and identify
@@ -43,6 +54,16 @@ export default function Terms() {
           cameras, alarms, access-control systems, and mains electrical work are
           not included in this online service menu.
         </p>
+        <h2>Questions about your project</h2>
+        <p>
+          Use the relevant project conversation for routine updates. Keep
+          passwords, property access codes, and full payment details out of
+          messages.
+        </p>
+        <SupportContact />
+        <Link className="text-link" href="/help">
+          Client Help →
+        </Link>
       </main>
       <Footer />
     </>

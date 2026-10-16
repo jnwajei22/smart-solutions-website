@@ -1,4 +1,5 @@
 import { Header, Footer } from "../../components/brand";
+import { SupportContact } from "../../components/support-contact";
 export const metadata = { title: "Privacy notice" };
 export default function Privacy() {
   return (
@@ -14,17 +15,17 @@ export default function Privacy() {
         </p>
         <h2>What we collect</h2>
         <p>
-          Your account email, contact name, phone number, service address,
-          project details, and records of quotes, approvals, and payments. Avoid
-          including passwords, alarm codes, or sensitive documents in project
-          descriptions.
+          Your account email, account type, contact name, business name when
+          supplied, phone number, service address, project details, and records
+          of quotes, approvals, and payments. Avoid including passwords, alarm
+          codes, or sensitive documents in project descriptions.
         </p>
         <h2>Accounts and payments</h2>
         <p>
-          Account and project records are hosted using Supabase. Payments are
-          processed on Stripe’s hosted checkout; we do not collect or store your
-          full card number. We retain payment references and amounts to
-          reconcile invoices.
+          This website is hosted on Vercel. Account and project records are
+          hosted using Supabase. Payments are processed on Stripe’s hosted
+          checkout; we do not collect or store your full card number. We retain
+          payment references and amounts to reconcile invoices.
         </p>
         <h2>Cookies</h2>
         <p>
@@ -38,10 +39,12 @@ export default function Privacy() {
           Project information is available to authorized business administrators
           and the associated customer account. We retain records for service
           continuity and applicable accounting requirements. For access,
-          correction, or deletion requests, reply to your existing project
-          correspondence. Information that must be retained for accounting or
-          legal obligations may not be deleted immediately.
+          correction, or deletion requests, use the contact instructions below.
+          Information that must be retained for accounting or legal obligations
+          may not be deleted immediately.
         </p>
+        <h2>Contact</h2>
+        <SupportContact />
       </main>
       <Footer />
     </>

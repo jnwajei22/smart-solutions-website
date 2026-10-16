@@ -1,6 +1,8 @@
 "use client";
+import { matchesRequest, requestAttention } from "../lib/operations";
+import { useRouter } from "next/navigation";
 import { statusLabel } from "../lib/presentation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2, ArrowUpRight, Save } from "lucide-react";
 import { Brand } from "./brand";
@@ -11,7 +13,26 @@ import {
   type PortalData,
   type LineItem,
 } from "../lib/catalog";
-export function AdminDashboard({ data }: { data: PortalData }) {
+type Draft = {
+  items: LineItem[];
+  title: string;
+  deposit: string;
+  due: string;
+  terms: string;
+  message: string;
+};
+export function AdminDashboard({
+  data,
+  demo = false,
+}: {
+  data: PortalData;
+  demo?: boolean;
+}) {
+  const router = useRouter();
+  const drafts = useRef<Record<string, Draft>>({});
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [notice, setNotice] = useState("");
   const [selected, setSelected] = useState(data.jobs[0]?.id || ""),
     [items, setItems] = useState<LineItem[]>([
       { description: "", quantity: 1, unit_cents: 0 },
@@ -25,7 +46,24 @@ export function AdminDashboard({ data }: { data: PortalData }) {
     [message, setMessage] = useState("");
   const job = data.jobs.find((j) => j.id === selected);
   const total = items.reduce((a, i) => a + i.quantity * i.unit_cents, 0);
+  const attention = data.jobs.map((j) => ({
+    job: j,
+    ...requestAttention(j, data),
+  }));
+  const visible = attention.filter(
+    (a) =>
+      matchesRequest(a.job, search) &&
+      (filter === "all" ||
+        (filter === "review" && a.needsReview) ||
+        (filter === "reply" && a.needsReply) ||
+        (filter === "approval" && a.awaitingApproval) ||
+        (filter === "schedule" && a.readyToSchedule)),
+  );
   async function send(body: object) {
+    if (demo) {
+      setError("Sample workspace: changes are not saved.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -36,7 +74,9 @@ export function AdminDashboard({ data }: { data: PortalData }) {
       });
       const d = await r.json();
       if (!r.ok) throw Error(d.error);
-      window.location.reload();
+      setNotice("Saved. Your workspace is updating.");
+      setMessage("");
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to save.");
     } finally {
@@ -62,6 +102,84 @@ export function AdminDashboard({ data }: { data: PortalData }) {
             <p>Your incoming requests, project scopes, and payment overview.</p>
           </div>
         </div>
+        {demo && (
+          <p className="alert">
+            Sample business workspace · Fictional data. Changes are not saved.
+          </p>
+        )}
+        <div className="ops-summary" aria-label="Work requiring attention">
+          <span>
+            <strong>{attention.filter((a) => a.needsReview).length}</strong>{" "}
+            Need Review
+          </span>
+          <span>
+            <strong>{attention.filter((a) => a.needsReply).length}</strong> Need
+            a Reply
+          </span>
+          <span>
+            <strong>
+              {attention.filter((a) => a.awaitingApproval).length}
+            </strong>{" "}
+            Awaiting Approval
+          </span>
+          <span>
+            <strong>{attention.filter((a) => a.readyToSchedule).length}</strong>{" "}
+            Ready to Schedule
+          </span>
+        </div>
+        <div className="ops-toolbar">
+          <label>
+            Search Requests
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Name, business, email, or city"
+            />
+          </label>
+          <label>
+            Show Requests
+            <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <option value="all">All Requests</option>
+              <option value="review">Need Review</option>
+              <option value="reply">Need a Reply</option>
+              <option value="approval">Awaiting Approval</option>
+              <option value="schedule">Ready to Schedule</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            className="button small outline"
+            disabled={busy || demo}
+            onClick={() => {
+              router.refresh();
+              setNotice(
+                "Checking for new requests and messages. Your unsent drafts are kept.",
+              );
+            }}
+          >
+            Refresh Workspace
+          </button>
+        </div>
+        <p className="fine-print">
+          New requests and messages appear here. Refresh to check for updates;
+          email alerts are not enabled.{" "}
+          <Link href="/admin/operations">Operating guide</Link>
+        </p>
+        {notice && (
+          <p role="status" className="fine-print">
+            {notice}
+          </p>
+        )}
+        {data.loadedAt && (
+          <p className="fine-print">
+            Workspace loaded{" "}
+            {new Date(data.loadedAt).toLocaleString("en-US", {
+              timeZone: "America/Chicago",
+            })}{" "}
+            Central
+          </p>
+        )}
         <div className="metrics">
           <div>
             <span>OPEN REQUESTS</span>
@@ -106,19 +224,51 @@ export function AdminDashboard({ data }: { data: PortalData }) {
               <h2>Service requests</h2>
               <span>{data.jobs.length}</span>
             </div>
-            {data.jobs.length ? (
-              data.jobs.map((j) => (
+            {visible.length ? (
+              visible.map(({ job: j, needsReply }) => (
                 <button
                   className={`admin-job ${selected === j.id ? "selected" : ""}`}
                   key={j.id}
                   onClick={() => {
+                    if (j.id === selected) return;
+                    drafts.current[selected] = {
+                      items,
+                      title,
+                      deposit,
+                      due,
+                      terms,
+                      message,
+                    };
+                    const next = drafts.current[j.id];
                     setSelected(j.id);
-                    setTitle("");
+                    setItems(
+                      next?.items || [
+                        { description: "", quantity: 1, unit_cents: 0 },
+                      ],
+                    );
+                    setTitle(next?.title || "");
+                    setDeposit(next?.deposit || "");
+                    setDue(next?.due || "");
+                    setTerms(next?.terms || "");
+                    setMessage(next?.message || "");
                     setError("");
+                    setNotice("");
+                    if (window.matchMedia("(max-width: 700px)").matches)
+                      document
+                        .getElementById("request-detail")
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
                   }}
                 >
                   <div>
                     <strong>{j.business_name || j.name}</strong>
+                    {needsReply && (
+                      <small className="needs-reply">
+                        Client Waiting for a Reply
+                      </small>
+                    )}
                     {j.business_name && <small>Contact: {j.name}</small>}
                     <small>
                       {services.find((s) => s.id === j.service)?.name} ·{" "}
@@ -132,12 +282,13 @@ export function AdminDashboard({ data }: { data: PortalData }) {
               ))
             ) : (
               <p className="empty-inline">
-                No requests yet. New verified customer submissions will appear
-                here.
+                {data.jobs.length
+                  ? "No requests match this search or filter."
+                  : "No requests yet. New verified customer submissions will appear here."}
               </p>
             )}
           </section>
-          <section className="panel admin-detail">
+          <section id="request-detail" className="panel admin-detail">
             {job ? (
               <>
                 <div className="eyebrow">REQUEST · {date(job.created_at)}</div>

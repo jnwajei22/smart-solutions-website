@@ -70,8 +70,9 @@ export function RequestForm() {
         <div className="eyebrow">REQUEST RECEIVED</div>
         <h2>You’re on our radar.</h2>
         <p>
-          Your request is saved. Track its status and any follow-up in your
-          client portal.
+          Your request is saved. We’ll review the details and follow up in your
+          client portal. Your preferred date is not a confirmed appointment;
+          we’ll agree on scope, price, and scheduling before work begins.
         </p>
         <button className="button" onClick={() => router.push("/portal")}>
           View my request <ArrowRight size={18} />
@@ -85,7 +86,7 @@ export function RequestForm() {
         <h2>Your project</h2>
       </div>
       <label>
-        What do you need?
+        Service
         <select
           value={form.service}
           onChange={(e) => change("service", e.target.value)}
@@ -112,7 +113,7 @@ export function RequestForm() {
         ))}
       </fieldset>
       <label>
-        Tell us about the work
+        Project Details
         <textarea
           required
           minLength={15}

@@ -131,6 +131,7 @@ export type Message = {
   created_at: string;
 };
 export type PortalData = {
+  loadedAt?: string;
   jobs: Job[];
   invoices: Invoice[];
   payments: Payment[];

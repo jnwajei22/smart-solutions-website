@@ -41,6 +41,7 @@ export async function loadPortal(admin = false): Promise<PortalData> {
   if (jobs.error || invoices.error || payments.error || messages.error)
     throw Error("Unable to load account records. Please try again.");
   return {
+    loadedAt: new Date().toISOString(),
     jobs: jobs.data || [],
     invoices: invoices.data || [],
     payments: payments.data || [],

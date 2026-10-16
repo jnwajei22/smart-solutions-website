@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MobileNavigation } from "./mobile-navigation";
 import {
   ArrowUpRight,
   Cable,
@@ -38,9 +39,10 @@ export function Header() {
             Client portal <ArrowUpRight size={14} />
           </Link>
         </nav>
-        <Link href="/request" className="button small">
+        <Link href="/request" className="button small desktop-cta">
           Let’s connect <ArrowUpRight size={16} />
         </Link>
+        <MobileNavigation />
       </div>
     </header>
   );
@@ -64,6 +66,7 @@ export function Footer() {
           <span>© {new Date().getFullYear()} DFW Smart Solutions LLC</span>
           <div>
             <Link href="/portal">Client portal</Link>
+            <Link href="/help">Client help</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Service terms</Link>
           </div>

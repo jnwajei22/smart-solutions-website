@@ -2247,3 +2247,235 @@ td {
 .project-messages form {
   margin-top: 16px;
 }
+
+/* Long client/company names and narrow grid items must wrap, not widen the page. */
+.portal-main,
+.panel,
+.admin-detail,
+.admin-grid > *,
+.field-grid > *,
+.quote-line > *,
+.profile-chip,
+.portal-heading > div {
+  min-width: 0;
+}
+.portal-heading h1,
+.admin-job strong,
+.admin-detail h2,
+.contact-details,
+.message-bubble,
+.job-description,
+.invoice-card h3,
+.invoice-lines,
+.invoice-document,
+.profile-chip > div {
+  overflow-wrap: anywhere;
+}
+.profile-chip > span {
+  flex-shrink: 0;
+}
+.profile-chip > div {
+  max-width: 240px;
+}
+.mobile-site-menu,
+.portal-menu-backdrop {
+  display: none;
+}
+.table-scroll {
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+}
+.table-scroll table {
+  min-width: 420px;
+}
+.invoice-document table {
+  table-layout: fixed;
+}
+.invoice-document th:first-child {
+  width: 46%;
+}
+.invoice-document td {
+  overflow-wrap: anywhere;
+}
+.ops-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin: 22px 0;
+}
+.ops-toolbar label {
+  flex: 1 1 210px;
+  font-size: 12px;
+  display: grid;
+  gap: 8px;
+}
+.ops-toolbar .button {
+  min-height: 44px;
+}
+.ops-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+.ops-summary span {
+  background: var(--pale);
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.needs-reply {
+  color: var(--green);
+  font-weight: 600;
+}
+.help-grid {
+  display: grid;
+  gap: 18px;
+  margin: 30px 0;
+}
+.help-grid section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 24px;
+}
+.help-grid h2 {
+  margin-top: 0;
+}
+.help-grid .text-link {
+  margin-top: 12px;
+}
+@media (max-width: 700px) {
+  input,
+  select,
+  textarea,
+  .quote-line input {
+    font-size: 16px;
+  }
+  .nav .desktop-cta {
+    display: none;
+  }
+  .mobile-site-menu {
+    display: block;
+    position: relative;
+  }
+  .mobile-site-menu > button {
+    min-width: 68px;
+    min-height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: white;
+    font-size: 13px;
+  }
+  .nav .mobile-site-menu nav {
+    display: flex;
+    position: absolute;
+    z-index: 40;
+    right: 0;
+    top: calc(100% + 12px);
+    width: min(270px, calc(100vw - 36px));
+    padding: 12px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 12px 30px #00331722;
+    flex-direction: column;
+    gap: 0;
+    align-items: stretch;
+  }
+  .mobile-site-menu nav a {
+    min-height: 44px;
+    padding: 12px;
+    font-size: 14px;
+  }
+  .sidebar.mobile-open {
+    overflow-y: auto;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+  .portal-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+  .mobile-menu {
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+  .portal-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 74px 0 0;
+    z-index: 24;
+    border: 0;
+    background: #001c1560;
+  }
+  .sidebar nav button,
+  .sidebar-bottom a,
+  .sidebar-bottom button {
+    min-height: 44px;
+  }
+  .portal-heading,
+  .invoice-card .actions,
+  .admin-invoice,
+  .print-tools {
+    flex-wrap: wrap;
+  }
+  .portal-heading .button,
+  .invoice-card .button,
+  .login-options button,
+  .quote-line > button,
+  .admin-detail .text-link {
+    min-height: 44px;
+  }
+  .quote-line {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
+    gap: 10px;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: end;
+  }
+  .quote-line > label:first-child {
+    grid-column: 1 / -1;
+  }
+  .quote-line label {
+    font-size: 12px;
+    margin-bottom: 0;
+  }
+  .quote-line > button {
+    width: 44px;
+    align-self: end;
+  }
+  .field-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-job {
+    align-items: flex-start;
+  }
+  .admin-job > div {
+    min-width: 0;
+  }
+  .admin-job .status {
+    flex-shrink: 0;
+  }
+  .admin-invoice {
+    display: flex;
+    gap: 12px;
+  }
+  .site-header .eyebrow {
+    display: none;
+  }
+  .legal h1 {
+    font-size: clamp(30px, 10vw, 40px);
+    overflow-wrap: anywhere;
+  }
+  .invoice-document {
+    width: calc(100% - 24px);
+    margin: 20px auto;
+    padding: 24px 14px;
+  }
+  .help-grid section {
+    padding: 20px;
+  }
+}

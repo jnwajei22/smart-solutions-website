@@ -1,6 +1,6 @@
 "use client";
 import { paymentActivity, statusLabel } from "../lib/presentation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -33,6 +33,7 @@ export function Portal({
   data: PortalData;
   demo?: boolean;
 }) {
+  const menuToggle = useRef<HTMLButtonElement>(null);
   const [tab, setTab] = useState("overview"),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(""),
@@ -198,8 +199,26 @@ export function Portal({
     );
   }
   return (
-    <div className="portal-layout">
-      <aside className={`sidebar ${mobile ? "mobile-open" : ""}`}>
+    <div
+      className="portal-layout"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          setMobile(false);
+          menuToggle.current?.focus();
+        }
+      }}
+    >
+      {mobile && (
+        <button
+          className="portal-menu-backdrop"
+          aria-label="Close client menu"
+          onClick={() => setMobile(false)}
+        />
+      )}
+      <aside
+        id="client-navigation"
+        className={`sidebar ${mobile ? "mobile-open" : ""}`}
+      >
         <Brand />
         <div className="sidebar-label">CLIENT WORKSPACE</div>
         <nav aria-label="Client workspace">
@@ -240,6 +259,7 @@ export function Portal({
               <Settings2 size={17} /> Business dashboard
             </Link>
           )}
+          <Link href="/help">Client help</Link>
           <Link href="/">
             Back to website <ArrowUpRight size={16} />
           </Link>
@@ -258,8 +278,11 @@ export function Portal({
       <div className="portal-main">
         <header className="portal-topbar">
           <button
+            ref={menuToggle}
             className="mobile-menu"
             aria-label="Toggle menu"
+            aria-expanded={mobile}
+            aria-controls="client-navigation"
             onClick={() => setMobile(!mobile)}
           >
             <Menu size={22} />

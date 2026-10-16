@@ -55,3 +55,12 @@ If Stripe creation fails ambiguously before a session ID is stored, the attempt 
 ## Verification limits
 
 Build/type checking and local database integration checks are automated. This environment does not provide the supported browser QA integration, so responsive visual behavior, keyboard navigation, live auth emails, and Stripe-hosted checkout must also be verified in the Vercel preview before production launch.
+
+
+## Client help and operating the workspace
+
+- Public client instructions: `/help`. Set `SUPPORT_EMAIL` to the approved public business support address in Vercel Preview and Production, then redeploy. Leave unset until the owner supplies an address; private account email is never used as fallback. This address is display-only and does not configure SMTP.
+- Admin work queue: `/admin`, with search and review/reply/approval/scheduling filters. Check it routinely; outbound request/message notifications are not yet enabled. Refresh Workspace keeps unsent per-request drafts while refreshing server data. Drafts are in-memory only and are lost on a full reload or tab close.
+- Protected operator instructions: `/admin/operations`. Full release, refund, backup, and incident steps: `docs/operations.md`.
+- `/api/health` is a no-store liveness endpoint only. It exposes no customer/provider data and does not certify database, SMTP, or Stripe health. External uptime and error-alert routing still require provider configuration.
+- Preview-only QA tools: `/preview/responsive?width=375&page=request`, `/preview/admin`, and `/preview/invoice`. They return 404 in production and use fictional data. Frame widths exercise responsive CSS, not device/browser emulation.

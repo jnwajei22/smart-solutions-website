@@ -1,3 +1,4 @@
+import { logFailure } from "../../../lib/observability";
 import { NextResponse } from "next/server";
 import { currentUser, adminClient, configured } from "../../../lib/supabase";
 import { bodyJSON, fail, sameOrigin } from "../../../lib/http";
@@ -69,7 +70,8 @@ export async function POST(request: Request) {
       .single();
     if (error) throw error;
     return NextResponse.json({ id: data.id }, { status: 201 });
-  } catch {
+  } catch (error) {
+    logFailure("request_save_failed", error);
     return fail("We couldn’t save your request. Please try again.", 500);
   }
 }

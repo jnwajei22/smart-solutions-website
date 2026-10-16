@@ -29,13 +29,11 @@ export async function POST(request: Request) {
         b.body.length > 2000
       )
         return fail("Write a message between 3 and 2,000 characters.");
-      const { error } = await db
-        .from("messages")
-        .insert({
-          request_id: job.id,
-          author_id: user.id,
-          body: b.body.trim(),
-        });
+      const { error } = await db.from("messages").insert({
+        request_id: job.id,
+        author_id: user.id,
+        body: b.body.trim(),
+      });
       if (error) throw error;
       return NextResponse.json({ saved: true });
     }
