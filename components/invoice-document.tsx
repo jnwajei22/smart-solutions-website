@@ -45,7 +45,7 @@ export function InvoiceDocument({
           Due<strong>{date(i.due_date)}</strong>
         </span>
       </div>
-      <table>
+      <table className="invoice-items">
         <thead>
           <tr>
             <th>Description</th>
@@ -65,6 +65,27 @@ export function InvoiceDocument({
           ))}
         </tbody>
       </table>
+      <div className="invoice-mobile-items" aria-label="Invoice line items">
+        {i.items.map((item, n) => (
+          <section key={n}>
+            <strong>{item.description}</strong>
+            <dl>
+              <div>
+                <dt>Qty</dt>
+                <dd>{item.quantity}</dd>
+              </div>
+              <div>
+                <dt>Unit Price</dt>
+                <dd>{money(item.unit_cents)}</dd>
+              </div>
+              <div>
+                <dt>Amount</dt>
+                <dd>{money(item.quantity * item.unit_cents)}</dd>
+              </div>
+            </dl>
+          </section>
+        ))}
+      </div>
       <div className="invoice-totals">
         <div>
           <span>Total</span>

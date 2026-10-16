@@ -636,37 +636,47 @@ export function Portal({
                 <span className="muted">USD</span>
               </div>
               {data.payments.length ? (
-                <div className="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Invoice</th>
-                        <th>Paid</th>
-                        <th>Refunded</th>
-                        <th>Net payment</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.payments.map((p) => (
-                        <tr key={p.id}>
-                          <td>{date(p.created_at)}</td>
-                          <td>
-                            {data.invoices.find((i) => i.id === p.invoice_id)
-                              ?.number || "Invoice"}
-                          </td>
-                          <td>{money(p.amount_cents)}</td>
-                          <td>{money(p.refunded_cents)}</td>
-                          <td>
-                            <strong>
-                              {money(p.amount_cents - p.refunded_cents)}
-                            </strong>
-                          </td>
+                <>
+                  <p className="scroll-hint">
+                    Swipe the table to see all payment details.
+                  </p>
+                  <div
+                    className="table-scroll"
+                    role="region"
+                    aria-label="Payment ledger table"
+                    tabIndex={0}
+                  >
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Invoice</th>
+                          <th>Paid</th>
+                          <th>Refunded</th>
+                          <th>Net payment</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {data.payments.map((p) => (
+                          <tr key={p.id}>
+                            <td>{date(p.created_at)}</td>
+                            <td>
+                              {data.invoices.find((i) => i.id === p.invoice_id)
+                                ?.number || "Invoice"}
+                            </td>
+                            <td>{money(p.amount_cents)}</td>
+                            <td>{money(p.refunded_cents)}</td>
+                            <td>
+                              <strong>
+                                {money(p.amount_cents - p.refunded_cents)}
+                              </strong>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               ) : (
                 <Empty
                   title="A clean slate."
