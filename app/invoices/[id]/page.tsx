@@ -23,7 +23,7 @@ export default async function InvoicePage({
   const i = data as Invoice;
   const { data: job } = await db
     .from("requests")
-    .select("name,email,address,city")
+    .select("name,business_name,email,address,city")
     .eq("id", i.request_id)
     .single();
   return (
@@ -40,7 +40,13 @@ export default async function InvoicePage({
       <h2>{i.title}</h2>
       <div className="request-meta">
         <span>
-          Prepared for<strong>{job?.name}</strong>
+          Prepared for<strong>{job?.business_name || job?.name}</strong>
+          {job?.business_name && (
+            <>
+              Contact: {job.name}
+              <br />
+            </>
+          )}
           {job?.email}
           <br />
           {job?.address}, {job?.city}

@@ -87,6 +87,7 @@ export type Job = {
   id: string;
   customer_id: string;
   name: string;
+  business_name?: string | null;
   email: string;
   phone: string;
   service: string;

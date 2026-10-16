@@ -31,3 +31,45 @@ export function paymentActivity(amount: number, refunded: number) {
     return { label: "Payment Partially Refunded", cents: amount - refunded };
   return { label: "Payment Received", cents: amount };
 }
+
+export type ClientAccountType = "personal" | "business";
+function normalizedName(value: unknown, max: number): string | null {
+  if (typeof value !== "string") return null;
+  const name = value.trim().replace(/\s+/g, " ");
+  return name.length >= 2 && name.length <= max ? name : null;
+}
+/** Customer-supplied identity is display data, never a permission or role. */
+export function signupMetadata(
+  accountType: ClientAccountType,
+  fullName: string,
+  company: string,
+) {
+  if (accountType !== "personal" && accountType !== "business")
+    throw Error("Choose Personal or Business.");
+  const name = normalizedName(fullName, 100);
+  if (!name) throw Error("Enter your full name (2–100 characters).");
+  const business =
+    accountType === "business" ? normalizedName(company, 160) : null;
+  if (accountType === "business" && !business)
+    throw Error("Enter your business name (2–160 characters).");
+  return {
+    account_type: accountType,
+    full_name: name,
+    business_name: business,
+  };
+}
+export function businessName(
+  metadata: Record<string, unknown> | undefined,
+): string | null {
+  return metadata?.account_type === "business"
+    ? normalizedName(metadata.business_name, 160)
+    : null;
+}
+export function accountName(
+  metadata: Record<string, unknown> | undefined,
+  requestName?: unknown,
+): string {
+  return (
+    businessName(metadata) || customerName(metadata?.full_name, requestName)
+  );
+}

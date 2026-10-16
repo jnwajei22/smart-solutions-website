@@ -12,7 +12,7 @@ create trigger on_auth_user_created after insert on auth.users for each row exec
 insert into public.profiles(id) select id from auth.users on conflict do nothing;
 create table public.requests (
  id uuid primary key default gen_random_uuid(), customer_id uuid not null references auth.users(id),
- name text not null, email text not null, phone text not null, service text not null check(service in ('cabling','wifi','racks','tv','smart')),
+ name text not null, business_name text check(business_name is null or length(btrim(business_name)) between 2 and 160), email text not null, phone text not null, service text not null check(service in ('cabling','wifi','racks','tv','smart')),
  property_type text not null check(property_type in ('Residential','Commercial')),
  address text not null, city text not null, details text not null, preferred_date date,
  status text not null default 'requested' check(status in ('requested','reviewing','quoted','scheduled','in_progress','completed','cancelled')),

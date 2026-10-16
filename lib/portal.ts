@@ -1,7 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { currentUser, serverClient, isAdmin } from "./supabase";
-import { customerName } from "./presentation";
+import { accountName } from "./presentation";
 import type { PortalData } from "./catalog";
 export async function loadPortal(admin = false): Promise<PortalData> {
   const user = await currentUser();
@@ -45,8 +45,8 @@ export async function loadPortal(admin = false): Promise<PortalData> {
     invoices: invoices.data || [],
     payments: payments.data || [],
     messages: messages.data || [],
-    name: customerName(
-      user.user_metadata?.full_name,
+    name: accountName(
+      user.user_metadata,
       jobs.data?.find((job) => job.customer_id === user.id)?.name,
     ),
     email: user.email || "",

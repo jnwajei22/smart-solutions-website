@@ -118,7 +118,8 @@ export function AdminDashboard({ data }: { data: PortalData }) {
                   }}
                 >
                   <div>
-                    <strong>{j.name}</strong>
+                    <strong>{j.business_name || j.name}</strong>
+                    {j.business_name && <small>Contact: {j.name}</small>}
                     <small>
                       {services.find((s) => s.id === j.service)?.name} ·{" "}
                       {j.city}
@@ -140,7 +141,8 @@ export function AdminDashboard({ data }: { data: PortalData }) {
             {job ? (
               <>
                 <div className="eyebrow">REQUEST · {date(job.created_at)}</div>
-                <h2>{job.name}</h2>
+                <h2>{job.business_name || job.name}</h2>
+                {job.business_name && <p>Contact: {job.name}</p>}
                 <div className="contact-details">
                   <a href={`mailto:${job.email}`}>{job.email}</a>
                   <a href={`tel:${job.phone}`}>{job.phone}</a>

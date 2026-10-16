@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser, adminClient, configured } from "../../../lib/supabase";
 import { bodyJSON, fail, sameOrigin } from "../../../lib/http";
-import { validPreferredDate } from "../../../lib/presentation";
+import { businessName, validPreferredDate } from "../../../lib/presentation";
 import { services } from "../../../lib/catalog";
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return fail("Request origin not allowed.", 403);
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         customer_id: user!.id,
         email: user!.email,
         name: b.name.trim(),
+        business_name: businessName(user.user_metadata),
         phone: b.phone.trim(),
         service: b.service,
         property_type: b.property_type,

@@ -2,6 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   customerName,
+  accountName,
+  businessName,
+  signupMetadata,
   paymentActivity,
   statusLabel,
   validPreferredDate,
@@ -50,4 +53,64 @@ test("refunded activity is identified as a refund instead of a zero-dollar payme
     label: "Payment Received",
     cents: 2500,
   });
+});
+
+test("business signup preserves separate company and contact names", () => {
+  const data = signupMetadata(
+    "business",
+    "  Justin   Nwajei  ",
+    "  DFW   Test & Co.  ",
+  );
+  assert.deepEqual(data, {
+    account_type: "business",
+    full_name: "Justin Nwajei",
+    business_name: "DFW Test & Co.",
+  });
+  assert.equal(accountName(data), "DFW Test & Co.");
+  assert.equal(
+    accountName({ full_name: "Existing Client" }),
+    "Existing Client",
+  );
+  assert.equal(
+    accountName({
+      account_type: "business",
+      business_name: {},
+      full_name: "Contact Name",
+    }),
+    "Contact Name",
+  );
+});
+test("personal signup clears stale company input and business metadata grants no role", () => {
+  const data = signupMetadata(
+    "personal",
+    "Élodie de la Cruz",
+    "Previous Company",
+  );
+  assert.equal(data.business_name, null);
+  assert.equal(accountName(data), "Élodie de la Cruz");
+  assert.equal(
+    businessName({
+      account_type: "personal",
+      business_name: "Ignored Company",
+    }),
+    null,
+  );
+  assert.equal(
+    businessName({ account_type: "business", business_name: "x".repeat(161) }),
+    null,
+  );
+  assert.equal("role" in data, false);
+});
+test("signup rejects blank and overlong names and unknown account types", () => {
+  for (const name of [" ", "x", "x".repeat(101)])
+    assert.throws(() => signupMetadata("personal", name, ""), /full name/);
+  for (const company of [" ", "x", "x".repeat(161)])
+    assert.throws(
+      () => signupMetadata("business", "Contact Name", company),
+      /business name/,
+    );
+  assert.throws(
+    () => signupMetadata("admin" as never, "Contact Name", "Company"),
+    /Personal or Business/,
+  );
 });

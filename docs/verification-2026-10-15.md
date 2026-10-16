@@ -40,3 +40,13 @@ No bypass credentials, signing secrets, or payment credentials are stored in thi
 - Current validation: 47 tests pass, lint passes, production build passes. A React review checked hook order, controlled fields, accessible labels, metadata display versus authorization, and preservation of customer spelling.
 - Authenticated client and business portals were inspected in the hosted browser: the client greeting uses Justin; Project Status options display Requested, Reviewing, Quoted, Scheduled, In Progress, Completed, and Cancelled. Preferred Date is required with no optional caption. Signup displays the required Full Name field. Email delivery is verified; completing the password change itself requires the account owner's participation.
 - Hosted testing exposed fully refunded activity incorrectly labeled as a zero-dollar payment received. Recent Activity now explicitly identifies full and partial refunds and preserves original/refunded details. A regression test covers all three payment activity states.
+
+
+## Business-client signup — October 15 follow-up
+
+- Signup offers Personal and Business account types. Personal requires Full Name; Business requires Business Name (2–160 characters) and Contact Full Name (2–100 characters), plus email and password. Personal submissions discard any previously entered company name.
+- Contact and company names are stored separately as customer-supplied display metadata. Business clients remain ordinary customers; admin authorization still comes exclusively from the protected profiles role.
+- Business portal greetings use the company name. New service requests snapshot the company from the authenticated account, not from request-body overrides. Business names appear alongside the contact on admin requests and printable invoices. Existing requests remain unchanged.
+- Applied the additive business_client_request_names migration to the connected preview database. A request-name snapshot write was verified inside a rolled-back transaction. Existing RLS and role permissions are unchanged. Security advisor findings remain the previously documented server-only tables and disabled leaked-password protection.
+- Automated validation: 51 tests pass; lint and production build pass. Added cases for business/contact separation, switching to Personal, malformed display metadata, name bounds, unknown account types, and account-derived request company snapshots.
+- New business test identity selected by owner: Gmail plus alias ending +dfw-business-test. Browser signup submission, email confirmation, and password change/reset remain pending the new credential handoff; no new account is reported as created yet.

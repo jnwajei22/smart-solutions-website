@@ -3,9 +3,12 @@ import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { signupMetadata, type ClientAccountType } from "../lib/presentation";
 import { browserClient } from "../lib/browser";
 export function LoginForm({ enabled }: { enabled: boolean }) {
   const [mode, setMode] = useState("login"),
+    [accountType, setAccountType] = useState<ClientAccountType>("personal"),
+    [businessName, setBusinessName] = useState(""),
     [fullName, setFullName] = useState(""),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
@@ -28,14 +31,12 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
         router.push(target);
         router.refresh();
       } else if (mode === "signup") {
-        const name = fullName.trim().replace(/\s+/g, " ");
-        if (name.length < 2 || name.length > 100)
-          throw Error("Enter your full name (2–100 characters).");
+        const metadata = signupMetadata(accountType, fullName, businessName);
         const { error } = await db.auth.signUp({
           email,
           password,
           options: {
-            data: { full_name: name },
+            data: metadata,
             emailRedirectTo: `${window.location.origin}/auth/confirm`,
           },
         });
@@ -88,22 +89,62 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
       ) : (
         <>
           {mode === "signup" && (
-            <label>
-              Full Name
-              <input
-                required
-                name="full_name"
-                autoComplete="name"
-                autoCapitalize="words"
-                minLength={2}
-                maxLength={100}
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-            </label>
+            <>
+              <fieldset className="segmented" disabled={busy}>
+                <legend>Account Type</legend>
+                {(["personal", "business"] as const).map((type) => (
+                  <label
+                    key={type}
+                    className={accountType === type ? "selected" : ""}
+                  >
+                    <input
+                      type="radio"
+                      name="account_type"
+                      value={type}
+                      checked={accountType === type}
+                      onChange={() => {
+                        setAccountType(type);
+                        setError("");
+                      }}
+                    />
+                    {type === "personal" ? "Personal" : "Business"}
+                  </label>
+                ))}
+              </fieldset>
+              {accountType === "business" && (
+                <label>
+                  Business Name
+                  <input
+                    required
+                    name="business_name"
+                    autoComplete="organization"
+                    autoCapitalize="words"
+                    minLength={2}
+                    maxLength={160}
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                  />
+                </label>
+              )}
+              <label>
+                {accountType === "business" ? "Contact Full Name" : "Full Name"}
+                <input
+                  required
+                  name="full_name"
+                  autoComplete="name"
+                  autoCapitalize="words"
+                  minLength={2}
+                  maxLength={100}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </label>
+            </>
           )}
           <label>
-            Email Address
+            {mode === "signup" && accountType === "business"
+              ? "Business Email Address"
+              : "Email Address"}
             <input
               required
               type="email"

@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import ts from "typescript";
 import Stripe from "stripe";
 import { services } from "../lib/catalog.ts";
-import { validPreferredDate } from "../lib/presentation.ts";
+import { businessName, validPreferredDate } from "../lib/presentation.ts";
 import { amountToCharge } from "../lib/billing.ts";
 import { trustedRequestOrigin } from "../lib/origin.ts";
 
@@ -520,22 +520,26 @@ test("webhook route verifies real Stripe signatures and paid/refund boundaries",
 test("request route requires a real preferred date before saving", async (t) => {
   const f = fixture();
   let inserts = 0;
+  let inserted: Record<string, unknown> = {};
+  let metadata: Record<string, unknown> = {};
   const handler = await route("app/api/requests/route.ts", {
     "next/server": { NextResponse: { json } },
     "../../../lib/http": f.dependencies["../../../lib/http"],
     "../../../lib/catalog": { services },
-    "../../../lib/presentation": { validPreferredDate },
+    "../../../lib/presentation": { businessName, validPreferredDate },
     "../../../lib/supabase": {
       configured: () => true,
       currentUser: async () => ({
         id: "customer-1",
         email: "test@example.invalid",
         email_confirmed_at: "2026-10-15",
+        user_metadata: metadata,
       }),
       adminClient: () => ({
         rpc: async () => ({ data: true, error: null }),
         from: () => ({
-          insert: () => {
+          insert: (value: Record<string, unknown>) => {
+            inserted = value;
             inserts++;
             return {
               select: () => ({
@@ -579,6 +583,31 @@ test("request route requires a real preferred date before saving", async (t) => 
     );
     assert.equal(response.status, 201);
     assert.equal(inserts, 1);
+    assert.equal(inserted.business_name, null);
   });
+  await t.test(
+    "business request snapshots the company from the signed-in account",
+    async () => {
+      metadata = {
+        account_type: "business",
+        full_name: "Contact Name",
+        business_name: "  DFW   QA Business  ",
+        role: "admin",
+      };
+      const response = await handler.POST(
+        request({
+          ...body,
+          preferred_date: "2026-10-20",
+          business_name: "Forged Company",
+          role: "admin",
+        }),
+      );
+      assert.equal(response.status, 201);
+      assert.equal(inserted.business_name, "DFW QA Business");
+      assert.equal(inserted.name, "A Customer");
+      assert.equal(inserted.customer_id, "customer-1");
+      assert.equal("role" in inserted, false);
+    },
+  );
   registry.clear();
 });
