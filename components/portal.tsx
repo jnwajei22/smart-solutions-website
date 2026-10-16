@@ -1,4 +1,5 @@
 "use client";
+import { statusLabel } from "../lib/presentation";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -375,7 +376,7 @@ export function Portal({
                           </small>
                         </div>
                         <span className={`status ${j.status}`}>
-                          {j.status.replace("_", " ")}
+                          {statusLabel(j.status)}
                         </span>
                       </div>
                     ))
@@ -477,7 +478,7 @@ export function Portal({
                         </h2>
                       </div>
                       <span className={`status ${j.status}`}>
-                        {j.status.replace("_", " ")}
+                        {statusLabel(j.status)}
                       </span>
                     </div>
                     <p>{j.details}</p>
@@ -492,7 +493,7 @@ export function Portal({
                         Requested<strong>{date(j.created_at)}</strong>
                       </span>
                       <span>
-                        Preferred date
+                        Preferred Date
                         <strong>
                           {j.preferred_date
                             ? date(j.preferred_date)
@@ -530,7 +531,7 @@ export function Portal({
                       {messageJob === j.id ? (
                         <form onSubmit={sendMessage}>
                           <label>
-                            Your update
+                            Your Update
                             <textarea
                               required
                               maxLength={2000}

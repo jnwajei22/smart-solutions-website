@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { browserClient } from "../lib/browser";
 export function LoginForm({ enabled }: { enabled: boolean }) {
   const [mode, setMode] = useState("login"),
+    [fullName, setFullName] = useState(""),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [busy, setBusy] = useState(false),
@@ -27,10 +28,14 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
         router.push(target);
         router.refresh();
       } else if (mode === "signup") {
+        const name = fullName.trim().replace(/\s+/g, " ");
+        if (name.length < 2 || name.length > 100)
+          throw Error("Enter your full name (2–100 characters).");
         const { error } = await db.auth.signUp({
           email,
           password,
           options: {
+            data: { full_name: name },
             emailRedirectTo: `${window.location.origin}/auth/confirm`,
           },
         });
@@ -82,11 +87,28 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
         </>
       ) : (
         <>
+          {mode === "signup" && (
+            <label>
+              Full Name
+              <input
+                required
+                name="full_name"
+                autoComplete="name"
+                autoCapitalize="words"
+                minLength={2}
+                maxLength={100}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+            </label>
+          )}
           <label>
-            Email address
+            Email Address
             <input
               required
               type="email"
+              name="email"
+              autoCapitalize="none"
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -98,6 +120,7 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
               <input
                 required
                 type="password"
+                name="password"
                 minLength={mode === "signup" ? 12 : 1}
                 maxLength={128}
                 autoComplete={

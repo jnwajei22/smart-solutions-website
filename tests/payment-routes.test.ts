@@ -3,6 +3,8 @@ import { test } from "node:test";
 import { readFile } from "node:fs/promises";
 import ts from "typescript";
 import Stripe from "stripe";
+import { services } from "../lib/catalog.ts";
+import { validPreferredDate } from "../lib/presentation.ts";
 import { amountToCharge } from "../lib/billing.ts";
 import { trustedRequestOrigin } from "../lib/origin.ts";
 
@@ -513,4 +515,70 @@ test("webhook route verifies real Stripe signatures and paid/refund boundaries",
     else process.env.STRIPE_WEBHOOK_SECRET = previous.hook;
     registry.clear();
   }
+});
+
+test("request route requires a real preferred date before saving", async (t) => {
+  const f = fixture();
+  let inserts = 0;
+  const handler = await route("app/api/requests/route.ts", {
+    "next/server": { NextResponse: { json } },
+    "../../../lib/http": f.dependencies["../../../lib/http"],
+    "../../../lib/catalog": { services },
+    "../../../lib/presentation": { validPreferredDate },
+    "../../../lib/supabase": {
+      configured: () => true,
+      currentUser: async () => ({
+        id: "customer-1",
+        email: "test@example.invalid",
+        email_confirmed_at: "2026-10-15",
+      }),
+      adminClient: () => ({
+        rpc: async () => ({ data: true, error: null }),
+        from: () => ({
+          insert: () => {
+            inserts++;
+            return {
+              select: () => ({
+                single: async () => ({
+                  data: { id: "request-1" },
+                  error: null,
+                }),
+              }),
+            };
+          },
+        }),
+      }),
+    },
+  });
+  const body = {
+    name: "A Customer",
+    phone: "1234567890",
+    address: "1 Example Street",
+    city: "Dallas",
+    details: "Test network installation request",
+    service: "wifi",
+    property_type: "Residential",
+    preferred_date: "",
+  };
+  await t.test(
+    "missing and impossible dates return a customer-facing error",
+    async () => {
+      for (const date of ["", "2026-02-30"]) {
+        const response = await handler.POST(
+          request({ ...body, preferred_date: date }),
+        );
+        assert.equal(response.status, 400);
+        assert.match((await response.json()).error, /Preferred Date/);
+      }
+      assert.equal(inserts, 0);
+    },
+  );
+  await t.test("valid date permits the request to be saved", async () => {
+    const response = await handler.POST(
+      request({ ...body, preferred_date: "2026-10-20" }),
+    );
+    assert.equal(response.status, 201);
+    assert.equal(inserts, 1);
+  });
+  registry.clear();
 });

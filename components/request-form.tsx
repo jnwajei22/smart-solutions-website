@@ -98,7 +98,7 @@ export function RequestForm() {
         </select>
       </label>
       <fieldset className="segmented">
-        <legend>Property type</legend>
+        <legend>Property Type</legend>
         {["Residential", "Commercial"].map((t) => (
           <label key={t} className={form.property_type === t ? "selected" : ""}>
             <input
@@ -129,17 +129,18 @@ export function RequestForm() {
       </div>
       <div className="field-grid">
         <label>
-          Full name
+          Full Name
           <input
             required
             maxLength={100}
             autoComplete="name"
+            autoCapitalize="words"
             value={form.name}
             onChange={(e) => change("name", e.target.value)}
           />
         </label>
         <label>
-          Phone number
+          Phone Number
           <input
             required
             type="tel"
@@ -151,11 +152,12 @@ export function RequestForm() {
         </label>
       </div>
       <label>
-        Service address
+        Service Address
         <input
           required
           maxLength={250}
           autoComplete="street-address"
+          autoCapitalize="words"
           value={form.address}
           onChange={(e) => change("address", e.target.value)}
         />
@@ -167,14 +169,16 @@ export function RequestForm() {
             required
             maxLength={80}
             autoComplete="address-level2"
+            autoCapitalize="words"
             placeholder="e.g. Cedar Hill"
             value={form.city}
             onChange={(e) => change("city", e.target.value)}
           />
         </label>
         <label>
-          Preferred date <span className="optional">(optional)</span>
+          Preferred Date
           <input
+            required
             type="date"
             min={new Date().toLocaleDateString("en-CA")}
             value={form.preferred_date}

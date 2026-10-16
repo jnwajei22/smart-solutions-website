@@ -9,7 +9,7 @@ export default function Reset() {
     <>
       <Header />
       <main className="container narrow section">
-        <h1>New password.</h1>
+        <h1>New Password.</h1>
         <form
           className="form-card"
           onSubmit={async (e) => {
@@ -34,7 +34,7 @@ export default function Reset() {
           }}
         >
           <label>
-            New password
+            New Password
             <input
               type="password"
               name="password"

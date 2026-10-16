@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser, adminClient, configured } from "../../../lib/supabase";
 import { bodyJSON, fail, sameOrigin } from "../../../lib/http";
+import { validPreferredDate } from "../../../lib/presentation";
 import { services } from "../../../lib/catalog";
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return fail("Request origin not allowed.", 403);
@@ -36,12 +37,8 @@ export async function POST(request: Request) {
       !["Residential", "Commercial"].includes(b.property_type)
     )
       return fail("Choose a valid service and property type.");
-    if (
-      b.preferred_date &&
-      (!/^\d{4}-\d{2}-\d{2}$/.test(b.preferred_date) ||
-        Number.isNaN(Date.parse(b.preferred_date)))
-    )
-      return fail("Choose a valid preferred date.");
+    if (!validPreferredDate(b.preferred_date))
+      return fail("Choose a valid Preferred Date.");
     const db = adminClient();
     const { data: allowed, error: limitError } = await db.rpc(
       "consume_request_limit",
@@ -65,7 +62,7 @@ export async function POST(request: Request) {
         address: b.address.trim(),
         city: b.city.trim(),
         details: b.details.trim(),
-        preferred_date: b.preferred_date || null,
+        preferred_date: b.preferred_date,
       })
       .select("id")
       .single();

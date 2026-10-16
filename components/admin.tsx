@@ -1,4 +1,5 @@
 "use client";
+import { statusLabel } from "../lib/presentation";
 import { useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2, ArrowUpRight, Save } from "lucide-react";
@@ -124,7 +125,7 @@ export function AdminDashboard({ data }: { data: PortalData }) {
                     </small>
                   </div>
                   <span className={`status ${j.status}`}>
-                    {j.status.replace("_", " ")}
+                    {statusLabel(j.status)}
                   </span>
                 </button>
               ))
@@ -179,7 +180,7 @@ export function AdminDashboard({ data }: { data: PortalData }) {
                     }}
                   >
                     <label>
-                      Reply to client
+                      Reply to Client
                       <textarea
                         required
                         minLength={3}
@@ -195,7 +196,7 @@ export function AdminDashboard({ data }: { data: PortalData }) {
                   </form>
                 </div>
                 <label>
-                  Project status
+                  Project Status
                   <select
                     value={job.status}
                     disabled={busy}
@@ -217,7 +218,7 @@ export function AdminDashboard({ data }: { data: PortalData }) {
                       "cancelled",
                     ].map((s) => (
                       <option key={s} value={s}>
-                        {s.replace("_", " ")}
+                        {statusLabel(s)}
                       </option>
                     ))}
                   </select>
@@ -235,7 +236,8 @@ export function AdminDashboard({ data }: { data: PortalData }) {
                             </strong>
                             <p>
                               {money(i.total_cents)} total ·{" "}
-                              {money(i.paid_cents)} paid · {i.status}
+                              {money(i.paid_cents)} paid ·{" "}
+                              {statusLabel(i.status)}
                             </p>
                           </div>
                           <Link
@@ -271,7 +273,7 @@ export function AdminDashboard({ data }: { data: PortalData }) {
                       <h2>Build a project quote</h2>
                     </div>
                     <label>
-                      Project title
+                      Project Title
                       <input
                         value={title}
                         required
@@ -324,7 +326,7 @@ export function AdminDashboard({ data }: { data: PortalData }) {
                             />
                           </label>
                           <label>
-                            Unit price ($)
+                            Unit Price ($)
                             <input
                               type="number"
                               required
@@ -391,7 +393,7 @@ export function AdminDashboard({ data }: { data: PortalData }) {
                         />
                       </label>
                       <label>
-                        Due date
+                        Due Date
                         <input
                           type="date"
                           required
@@ -401,7 +403,7 @@ export function AdminDashboard({ data }: { data: PortalData }) {
                       </label>
                     </div>
                     <label>
-                      Project terms & deposit conditions
+                      Project Terms & Deposit Conditions
                       <textarea
                         required
                         minLength={20}

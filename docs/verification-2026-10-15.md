@@ -29,3 +29,13 @@ The database suite covers cross-customer access, privilege escalation, quote tot
 - Production environment, domain, live Stripe credentials, and live webhook remain outside this preview test. This report is not production launch approval.
 
 No bypass credentials, signing secrets, or payment credentials are stored in this report or source.
+
+
+## Follow-up: account and form polish
+
+- Signup now requires Full Name and saves it as display-only Supabase user metadata. Portal greetings prefer this name, fall back to the customer's own existing service-request name, then use “Client”; email handles are no longer used as names. Authorization remains based on the protected database role.
+- Preferred Date is now required for new requests on both the form and API, with impossible calendar dates rejected. Existing saved requests remain intact.
+- Form labels and project/invoice status displays use consistent capitalization in both customer and business portals. Status storage values and customer-entered names remain unchanged.
+- Password-reset email delivery independently verified: the API accepted the recovery request and a new “Reset your password” email from Supabase Auth arrived in the owner's Gmail inbox on October 16 at 01:28 UTC. The password was not changed and the recovery token was not opened or inspected.
+- Current validation: 46 tests pass, lint passes, production build passes. A React review checked hook order, controlled fields, accessible labels, metadata display versus authorization, and preservation of customer spelling.
+- Remaining browser limits from the earlier report still apply until an authenticated testing browser is available. Email delivery is now verified; completing the password change itself requires the account owner's participation.
