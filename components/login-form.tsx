@@ -6,7 +6,11 @@ import { ArrowRight } from "lucide-react";
 import { signupMetadata, type ClientAccountType } from "../lib/presentation";
 import { browserClient } from "../lib/browser";
 export function LoginForm({ enabled }: { enabled: boolean }) {
-  const [mode, setMode] = useState("login"),
+  const params = useSearchParams(),
+    router = useRouter();
+  const [mode, setMode] = useState(
+      params.get("flow") === "recovery" ? "reset" : "login",
+    ),
     [accountType, setAccountType] = useState<ClientAccountType>("personal"),
     [businessName, setBusinessName] = useState(""),
     [fullName, setFullName] = useState(""),
@@ -14,9 +18,11 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
     [password, setPassword] = useState(""),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
-    [error, setError] = useState("");
-  const params = useSearchParams(),
-    router = useRouter();
+    [error, setError] = useState(
+      params.get("error") === "confirmation"
+        ? "This email link is invalid, expired, or has already been used. Request a new link and open the newest email in the same browser where you requested it."
+        : "",
+    );
   const target = params.get("next") === "/request" ? "/request" : "/portal";
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,7 +56,7 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
         });
         if (error) throw error;
         setMessage(
-          "If an account exists, a password reset email is on its way.",
+          "If an account exists, a password reset email is on its way. Open the newest email in this same browser; older links may no longer work.",
         );
       }
     } catch (e) {

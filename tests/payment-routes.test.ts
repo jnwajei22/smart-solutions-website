@@ -611,3 +611,158 @@ test("request route requires a real preferred date before saving", async (t) => 
   );
   registry.clear();
 });
+
+test("auth callback keeps recovery intent and fails safely", async (t) => {
+  let enabled = true;
+  let exchangeError: unknown = null;
+  let redirectType: string | null = null;
+  let otpError: unknown = null;
+  const authCalls: Array<{ method: string; args: unknown[] }> = [];
+  const handler = await route("app/auth/confirm/route.ts", {
+    "next/server": {
+      NextResponse: {
+        redirect: (url: URL) =>
+          new Response(null, {
+            status: 307,
+            headers: { location: url.toString() },
+          }),
+      },
+    },
+    "../../../lib/supabase": {
+      configured: () => enabled,
+      serverClient: async () => ({
+        auth: {
+          exchangeCodeForSession: async (...args: unknown[]) => {
+            authCalls.push({ method: "exchange", args });
+            return { data: { redirectType }, error: exchangeError };
+          },
+          verifyOtp: async (...args: unknown[]) => {
+            authCalls.push({ method: "otp", args });
+            return { error: otpError };
+          },
+        },
+      }),
+    },
+  });
+  async function follow(query: string) {
+    authCalls.length = 0;
+    const response = await handler.GET(
+      new Request(`${origin}/auth/confirm${query}`),
+    );
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+    assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+    return new URL(response.headers.get("location")!);
+  }
+  try {
+    await t.test("recovery code reaches the password form", async () => {
+      const url = await follow("?code=local-fake&next=/reset-password");
+      assert.equal(url.pathname, "/reset-password");
+    });
+    await t.test(
+      "provider recovery type survives a missing next parameter",
+      async () => {
+        redirectType = "recovery";
+        assert.equal(
+          (await follow("?code=local-fake")).pathname,
+          "/reset-password",
+        );
+        redirectType = null;
+      },
+    );
+    await t.test(
+      "matching concurrent PKCE flow is forwarded to the provider",
+      async () => {
+        await follow("?code=local-fake&sb_flow_id=test-flow-id");
+        assert.deepEqual(authCalls[0], {
+          method: "exchange",
+          args: ["local-fake", { flowId: "test-flow-id" }],
+        });
+        assert.equal(
+          (await follow("?code=local-fake&sb_flow_id=bad")).searchParams.get(
+            "error",
+          ),
+          "confirmation",
+        );
+        assert.equal(authCalls.length, 0);
+      },
+    );
+    await t.test(
+      "expired recovery keeps reset context without forwarding secrets",
+      async () => {
+        exchangeError = new Error("fake-private-provider-error");
+        const url = await follow("?code=local-fake&next=/reset-password");
+        assert.equal(url.pathname, "/login");
+        assert.equal(url.searchParams.get("flow"), "recovery");
+        assert.equal(url.searchParams.get("error"), "confirmation");
+        assert.equal(url.searchParams.has("code"), false);
+        exchangeError = null;
+      },
+    );
+    await t.test(
+      "upstream failures and missing tokens cannot create a session",
+      async () => {
+        for (const query of ["?error=access_denied&next=/reset-password", ""]) {
+          assert.equal(
+            (await follow(query)).searchParams.get("error"),
+            "confirmation",
+          );
+          assert.equal(authCalls.length, 0);
+        }
+      },
+    );
+    await t.test(
+      "token-hash recovery and signup use the intended verification type",
+      async () => {
+        assert.equal(
+          (await follow("?token_hash=fake-local&type=recovery")).pathname,
+          "/reset-password",
+        );
+        assert.deepEqual(authCalls[0], {
+          method: "otp",
+          args: [{ token_hash: "fake-local", type: "recovery" }],
+        });
+        assert.equal(
+          (await follow("?token_hash=fake-local&type=signup")).pathname,
+          "/portal",
+        );
+        otpError = new Error("expired");
+        assert.equal(
+          (
+            await follow("?token_hash=fake-local&type=recovery")
+          ).searchParams.get("flow"),
+          "recovery",
+        );
+        otpError = null;
+      },
+    );
+    await t.test(
+      "external redirects and unsupported token types are rejected",
+      async () => {
+        assert.equal(
+          (await follow("?code=local-fake&next=https://evil.invalid")).pathname,
+          "/portal",
+        );
+        assert.equal(
+          (await follow("?token_hash=fake-local&type=admin")).searchParams.get(
+            "error",
+          ),
+          "confirmation",
+        );
+        assert.equal(authCalls.length, 0);
+      },
+    );
+    await t.test(
+      "unconfigured auth fails without calling the provider",
+      async () => {
+        enabled = false;
+        assert.equal(
+          (await follow("?code=local-fake")).searchParams.get("error"),
+          "confirmation",
+        );
+        assert.equal(authCalls.length, 0);
+      },
+    );
+  } finally {
+    registry.clear();
+  }
+});
