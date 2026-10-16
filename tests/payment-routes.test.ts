@@ -658,6 +658,34 @@ test("auth callback keeps recovery intent and fails safely", async (t) => {
     return new URL(response.headers.get("location")!);
   }
   try {
+    await t.test(
+      "callback reports only allowlisted failure categories",
+      async () => {
+        for (const [code, expected] of [
+          ["pkce_code_verifier_not_found", "browser_verification"],
+          ["bad_code_verifier", "exchange_rejected"],
+          ["flow_state_not_found", "exchange_rejected"],
+          ["otp_expired", "link_expired"],
+          ["flow_state_expired", "link_expired"],
+          ["private-provider-message", "confirmation"],
+        ]) {
+          exchangeError = { code, message: "private-provider-message" };
+          const url = await follow("?code=local-fake&next=/reset-password");
+          assert.equal(url.searchParams.get("error"), expected);
+          assert.equal(url.searchParams.get("flow"), "recovery");
+          assert.equal(
+            url.toString().includes("private-provider-message"),
+            false,
+          );
+        }
+        exchangeError = null;
+        const upstream = await follow(
+          "?error=access_denied&error_code=otp_expired&next=/reset-password",
+        );
+        assert.equal(upstream.searchParams.get("error"), "link_expired");
+        assert.equal(authCalls.length, 0);
+      },
+    );
     await t.test("recovery code reaches the password form", async () => {
       const url = await follow("?code=local-fake&next=/reset-password");
       assert.equal(url.pathname, "/reset-password");

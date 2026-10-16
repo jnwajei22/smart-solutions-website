@@ -19,9 +19,15 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [error, setError] = useState(
-      params.get("error") === "confirmation"
-        ? "This email link is invalid, expired, or has already been used. Request a new link and open the newest email in the same browser where you requested it."
-        : "",
+      params.get("error") === "browser_verification"
+        ? "This browser could not find the verification saved when the email was requested. Request a new link here and open it in this same browser on this exact website address."
+        : params.get("error") === "exchange_rejected"
+          ? "The sign-in exchange for this email link could not be completed. Request one new link and use only that email."
+          : params.get("error") === "link_expired"
+            ? "The verification service reported that this link has expired or has already been used. Request a new link."
+            : params.get("error") === "confirmation"
+              ? "We could not complete email verification. This message does not mean the link expired. Request a new link and try again."
+              : "",
     );
   const target = params.get("next") === "/request" ? "/request" : "/portal";
   async function submit(e: React.FormEvent) {
