@@ -3,6 +3,7 @@ import Link from "next/link";
 import { currentUser, configured, serverClient } from "../../../lib/supabase";
 import { Brand } from "../../../components/brand";
 import { money, date, type Invoice } from "../../../lib/catalog";
+import { statusLabel } from "../../../lib/presentation";
 import { PrintButton } from "../../../components/print-button";
 export const dynamic = "force-dynamic";
 export default async function InvoicePage({
@@ -92,7 +93,7 @@ export default async function InvoicePage({
       <h2>Project terms</h2>
       <p className="quote-terms">{i.terms}</p>
       <p>
-        Status: {i.status} ·{" "}
+        Status: {statusLabel(i.status)} ·{" "}
         {i.accepted_at
           ? `Approved ${date(i.accepted_at)}`
           : "Awaiting customer approval"}
