@@ -23,3 +23,11 @@ export function validPreferredDate(value: unknown): value is string {
     !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
   );
 }
+
+export function paymentActivity(amount: number, refunded: number) {
+  if (refunded >= amount)
+    return { label: "Payment Refunded", cents: -refunded };
+  if (refunded > 0)
+    return { label: "Payment Partially Refunded", cents: amount - refunded };
+  return { label: "Payment Received", cents: amount };
+}

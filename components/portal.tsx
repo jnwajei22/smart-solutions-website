@@ -1,5 +1,5 @@
 "use client";
-import { statusLabel } from "../lib/presentation";
+import { paymentActivity, statusLabel } from "../lib/presentation";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -440,17 +440,32 @@ export function Portal({
                     <div className="activity-row" key={p.id}>
                       <span className="activity-dot" />
                       <div>
-                        <strong>Payment received</strong>
+                        <strong>
+                          {
+                            paymentActivity(p.amount_cents, p.refunded_cents)
+                              .label
+                          }
+                        </strong>
                         <small>
                           {
                             data.invoices.find((i) => i.id === p.invoice_id)
                               ?.number
                           }{" "}
                           · {date(p.created_at)}
+                          {p.refunded_cents > 0 && (
+                            <>
+                              {" "}
+                              · Originally {money(p.amount_cents)} · Refunded{" "}
+                              {money(p.refunded_cents)}
+                            </>
+                          )}
                         </small>
                       </div>
                       <strong>
-                        {money(p.amount_cents - p.refunded_cents)}
+                        {money(
+                          paymentActivity(p.amount_cents, p.refunded_cents)
+                            .cents,
+                        )}
                       </strong>
                     </div>
                   ))

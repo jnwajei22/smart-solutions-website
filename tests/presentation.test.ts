@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   customerName,
+  paymentActivity,
   statusLabel,
   validPreferredDate,
 } from "../lib/presentation.ts";
@@ -34,4 +35,19 @@ test("preferred date is required and must be a real calendar date", () => {
     assert.equal(validPreferredDate(value), false);
   for (const value of ["2028-02-29", "2026-10-20"])
     assert.equal(validPreferredDate(value), true);
+});
+
+test("refunded activity is identified as a refund instead of a zero-dollar payment received", () => {
+  assert.deepEqual(paymentActivity(7500, 7500), {
+    label: "Payment Refunded",
+    cents: -7500,
+  });
+  assert.deepEqual(paymentActivity(2500, 1000), {
+    label: "Payment Partially Refunded",
+    cents: 1500,
+  });
+  assert.deepEqual(paymentActivity(2500, 0), {
+    label: "Payment Received",
+    cents: 2500,
+  });
 });
