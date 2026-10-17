@@ -11,6 +11,8 @@ import { bodyJSON, fail, sameOrigin } from "../../../lib/http";
 import { calculateTotal } from "../../../lib/billing";
 import { validPreferredDate } from "../../../lib/presentation";
 import { canManageProjects } from "../../../lib/access";
+import { loadPriceBook } from "../../../lib/price-book-server";
+import { calculateQuote } from "../../../lib/pricing";
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return fail("Request origin not allowed.", 403);
   if (!configured()) return fail("Account services are not configured.", 503);
@@ -111,11 +113,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ saved: true });
     }
     if (b.action !== "quote") return fail("Unknown action.");
-    const total = calculateTotal(b.items);
+    if (!b.pricing_plan)
+      return fail(
+        "Open the quote calculator and review pricing before issuing.",
+      );
+    const priceBook = await loadPriceBook();
+    if (b.pricing_plan.priceBookVersion !== priceBook.version)
+      return fail(
+        "Shared pricing changed. Reload the shared rates in the calculator and review this quote.",
+        409,
+      );
+    const calculation = calculateQuote(b.pricing_plan, priceBook);
+    if (
+      calculation.requiresOverride &&
+      b.pricing_plan.overrideReason.trim().length < 10
+    )
+      return fail(
+        "Explain the pricing exception in at least 10 characters before issuing.",
+      );
+    const total = calculateTotal(calculation.items);
+    if (JSON.stringify(b.items) !== JSON.stringify(calculation.items))
+      return fail(
+        "The quote preview changed. Review the calculator before issuing.",
+        409,
+      );
     if (
       typeof b.terms !== "string" ||
       b.terms.trim().length < 20 ||
-      b.terms.length > 2000
+      b.terms.length > 1500
     )
       return fail(
         "Add project-specific terms, including deposit and cancellation conditions.",
@@ -134,18 +159,30 @@ export async function POST(request: Request) {
       return fail("Deposit must be between zero and the quote total.");
     if (!validPreferredDate(b.due_date))
       return fail("Choose a valid due date.");
-    const { data, error: quoteError } = await db.rpc("issue_quote", {
+    const quoteTerms = `${calculation.scopeTerms}\n\nProject Terms & Deposit Conditions\n${b.terms.trim()}`;
+    if (quoteTerms.length > 6000)
+      return fail("Shorten the equipment or project terms before issuing.");
+    const { data, error: quoteError } = await db.rpc("issue_priced_quote", {
       p_request: job.id,
       p_title: b.title.trim(),
-      p_items: b.items,
+      p_items: calculation.items,
       p_total: total,
       p_deposit: b.deposit_cents,
       p_due: b.due_date,
-      p_terms: b.terms.trim(),
+      p_terms: quoteTerms,
+      p_expected_version: priceBook.version,
+      p_actor: user.id,
+      p_audit: {
+        plan: b.pricing_plan,
+        estimatedCostCents: calculation.estimatedCostCents,
+        contributionCents: calculation.contributionCents,
+        marginBps: calculation.marginBps,
+        warnings: calculation.warnings,
+      },
     });
     if (quoteError)
       return fail(
-        "Unable to issue quote. This request may already have an invoice.",
+        "Unable to issue quote. Refresh shared rates and check whether this project is closed or already has an invoice.",
         409,
       );
     scheduleNotifications();

@@ -32,6 +32,14 @@ export default async function Operations() {
       </p>
       <h2>3. Issue a complete quote</h2>
       <p>
+        Open Quote &amp; Payments and start the guided calculator. Review the
+        package, actual crew and time, dispatch city, return travel, equipment
+        supply, materials, discounts, and applicable tax. Enter total vehicle
+        miles across all vehicles. Explain any margin or travel exception.
+        Administrators maintain shared rates under Pricing; launch defaults are
+        planning assumptions that need your review.
+      </p>
+      <p>
         List labor, materials, travel, and any applicable tax separately.
         Confirm the total, deposit, due date, exclusions, schedule, and
         project-specific cancellation/refund terms before issuing. Issued

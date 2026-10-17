@@ -11,7 +11,14 @@ export function calculateTotal(items: LineItem[]) {
       item.quantity < 1 ||
       item.quantity > 10000 ||
       !Number.isInteger(item.unit_cents) ||
-      item.unit_cents < 0 ||
+      (item.unit_cents < 0 &&
+        (item.kind !== "discount" || item.quantity !== 1)) ||
+      item.unit_cents < -10000000 ||
+      (item.kind === "discount" && item.unit_cents >= 0) ||
+      (item.kind !== undefined &&
+        !["labor", "material", "travel", "discount", "tax"].includes(
+          item.kind,
+        )) ||
       item.unit_cents > 10000000
     )
       throw new Error(

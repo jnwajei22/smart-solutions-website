@@ -5,6 +5,7 @@ import { currentUser, adminClient, configured } from "../../../lib/supabase";
 import { bodyJSON, fail, sameOrigin } from "../../../lib/http";
 import { businessName, validPreferredDate } from "../../../lib/presentation";
 import { services } from "../../../lib/catalog";
+import { normalizeQualification } from "../../../lib/qualification";
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return fail("Request origin not allowed.", 403);
   if (!configured())
@@ -41,6 +42,16 @@ export async function POST(request: Request) {
       return fail("Choose a valid service and property type.");
     if (!validPreferredDate(b.preferred_date))
       return fail("Choose a valid Preferred Date.");
+    let qualification;
+    try {
+      qualification = normalizeQualification(b.qualification);
+    } catch (error) {
+      return fail(
+        error instanceof Error
+          ? error.message
+          : "Please check the project questions.",
+      );
+    }
     const db = adminClient();
     const { data: allowed, error: limitError } = await db.rpc(
       "consume_request_limit",
@@ -66,6 +77,7 @@ export async function POST(request: Request) {
         city: b.city.trim(),
         details: b.details.trim(),
         preferred_date: b.preferred_date,
+        qualification,
       })
       .select("id")
       .single();

@@ -120,6 +120,11 @@ export function InvoiceDocument({
           </strong>
         </div>
       </div>
+      <p className="fine-print">
+        The requested deposit is part of the total, not an additional fee.
+        Customer-supplied equipment is identified in the project scope; only
+        listed materials are billed.
+      </p>
       <h2>Project terms</h2>
       <p className="quote-terms">{i.terms}</p>
       <p>

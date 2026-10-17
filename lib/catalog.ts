@@ -82,6 +82,7 @@ export type LineItem = {
   description: string;
   quantity: number;
   unit_cents: number;
+  kind?: "labor" | "material" | "travel" | "discount" | "tax";
 };
 export type Job = {
   id: string;
@@ -98,6 +99,7 @@ export type Job = {
   preferred_date: string | null;
   status: string;
   created_at: string;
+  qualification?: import("./qualification").RequestQualification;
 };
 export type Invoice = {
   id: string;
