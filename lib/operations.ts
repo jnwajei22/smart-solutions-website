@@ -17,7 +17,9 @@ export function requestAttention(
   );
   const active = !["completed", "cancelled"].includes(job.status);
   return {
-    needsReply: latest?.author_id === job.customer_id,
+    needsReply: latest?.sender_type
+      ? latest.sender_type === "client"
+      : latest?.author_id === job.customer_id,
     needsReview:
       active && ["requested", "reviewing"].includes(job.status) && !invoice,
     awaitingApproval:

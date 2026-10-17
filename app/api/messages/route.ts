@@ -34,7 +34,12 @@ export async function POST(request: Request) {
       return fail("Message limit reached. Please try again tomorrow.", 429);
     const { error } = await db
       .from("messages")
-      .insert({ request_id: job.id, author_id: user.id, body: b.body.trim() });
+      .insert({
+        request_id: job.id,
+        author_id: user.id,
+        sender_type: "client",
+        body: b.body.trim(),
+      });
     if (error) throw error;
     scheduleNotifications();
     return NextResponse.json({ saved: true });

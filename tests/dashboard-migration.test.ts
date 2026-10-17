@@ -14,13 +14,14 @@ test("dashboard migration preserves existing invoices and service role processes
     new URL("../supabase/schema.sql", import.meta.url),
     "utf8",
   );
-  assert.ok(schema.endsWith(migration));
+  const boundary = schema.indexOf(migration);
+  assert.ok(boundary > 0);
   const db = new PGlite();
   try {
     await db.exec(
       "create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz default now());create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid;$$;grant usage on schema public,auth to anon,authenticated,service_role;grant execute on function auth.uid() to authenticated,service_role;",
     );
-    await db.exec(schema.slice(0, -migration.length));
+    await db.exec(schema.slice(0, boundary));
     const client = "00000000-0000-0000-0000-000000000010",
       owner = "00000000-0000-0000-0000-000000000011";
     await db.query(

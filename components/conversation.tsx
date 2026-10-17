@@ -25,7 +25,9 @@ export function Conversation({
     >
       {messages.length ? (
         messages.map((m) => {
-          const client = m.author_id === customerId;
+          const client = m.sender_type
+            ? m.sender_type === "client"
+            : m.author_id === customerId;
           const outgoing = business ? !client : client;
           return (
             <article

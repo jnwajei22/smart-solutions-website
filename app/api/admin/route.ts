@@ -78,6 +78,7 @@ export async function POST(request: Request) {
       const { error } = await db.from("messages").insert({
         request_id: job.id,
         author_id: user.id,
+        sender_type: "business",
         body: b.body.trim(),
       });
       if (error) throw error;
