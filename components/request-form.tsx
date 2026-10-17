@@ -3,6 +3,22 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { services } from "../lib/catalog";
+import {
+  equipmentSupplies,
+  leadSources,
+  budgetRanges,
+  type RequestQualification,
+} from "../lib/qualification";
+const qualification: RequestQualification = {
+  equipment_supply: "unsure",
+  equipment_details: "",
+  postal_code: "",
+  access_notes: "",
+  budget_range: "Not Sure Yet",
+  schedule_flexible: false,
+  lead_source: "Other",
+  referral_details: "",
+};
 const initial = {
   service: "wifi",
   property_type: "Residential",
@@ -12,6 +28,7 @@ const initial = {
   city: "",
   preferred_date: "",
   details: "",
+  qualification,
 };
 export function RequestForm() {
   const params = useSearchParams(),
@@ -24,16 +41,37 @@ export function RequestForm() {
     try {
       const saved = sessionStorage.getItem("dfw-request");
       // Browser storage is only available after hydration.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (saved) setForm({ ...initial, ...JSON.parse(saved) });
-      else if (services.some((s) => s.id === params.get("service")))
+      if (saved) {
+        const value = JSON.parse(saved);
+        // Restoring a tab-local draft after hydration.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setForm({
+          ...initial,
+          ...value,
+          qualification: { ...qualification, ...value.qualification },
+        });
+      } else if (services.some((s) => s.id === params.get("service")))
         setForm((f) => ({ ...f, service: params.get("service")! }));
     } catch {}
   }, [params]);
   function change(key: string, value: string) {
     setForm((f) => {
       const next = { ...f, [key]: value };
-      sessionStorage.setItem("dfw-request", JSON.stringify(next));
+      try {
+        sessionStorage.setItem("dfw-request", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }
+  function qualify(key: keyof RequestQualification, value: string | boolean) {
+    setForm((f) => {
+      const next = {
+        ...f,
+        qualification: { ...f.qualification, [key]: value },
+      };
+      try {
+        sessionStorage.setItem("dfw-request", JSON.stringify(next));
+      } catch {}
       return next;
     });
   }
@@ -53,7 +91,9 @@ export function RequestForm() {
       }
       const d = await r.json();
       if (!r.ok) throw Error(d.error);
-      sessionStorage.removeItem("dfw-request");
+      try {
+        sessionStorage.removeItem("dfw-request");
+      } catch {}
       setSuccess(true);
     } catch (e) {
       setError(
@@ -124,6 +164,67 @@ export function RequestForm() {
           onChange={(e) => change("details", e.target.value)}
         />
       </label>
+      <fieldset className="equipment-questions">
+        <legend>Equipment & Installation</legend>
+        <label>
+          Who Will Supply the Equipment?
+          <select
+            value={form.qualification.equipment_supply}
+            onChange={(e) => qualify("equipment_supply", e.target.value)}
+          >
+            {Object.entries(equipmentSupplies).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="fine-print">
+          Labor-only quotes are available for compatible equipment you already
+          own. We’ll review the scope and any missing parts before booking.
+        </p>
+        <label>
+          Equipment Details
+          <textarea
+            rows={3}
+            maxLength={1200}
+            required={["customer", "mixed"].includes(
+              form.qualification.equipment_supply,
+            )}
+            minLength={
+              ["customer", "mixed"].includes(
+                form.qualification.equipment_supply,
+              )
+                ? 3
+                : undefined
+            }
+            value={form.qualification.equipment_details}
+            onChange={(e) => qualify("equipment_details", e.target.value)}
+            placeholder="Brands, model numbers, quantities, and any mounts or accessories you already have. If unknown, tell us what you need help choosing."
+          />
+        </label>
+        <label>
+          Installation Conditions
+          <textarea
+            rows={3}
+            maxLength={1200}
+            value={form.qualification.access_notes}
+            onChange={(e) => qualify("access_notes", e.target.value)}
+            placeholder="TV size and wall type; cable start/end points; floors, attic access, rack size, or access restrictions. Please do not include passwords or access codes."
+          />
+        </label>
+        <label>
+          Estimated Budget
+          <select
+            value={form.qualification.budget_range}
+            onChange={(e) => qualify("budget_range", e.target.value)}
+          >
+            {budgetRanges.map((value) => (
+              <option key={value}>{value}</option>
+            ))}
+          </select>
+        </label>
+      </fieldset>
       <div className="form-section-title">
         <span>02</span>
         <h2>Your details</h2>
@@ -177,6 +278,20 @@ export function RequestForm() {
           />
         </label>
         <label>
+          ZIP Code
+          <input
+            required
+            inputMode="numeric"
+            pattern="[0-9]{5}"
+            maxLength={5}
+            autoComplete="postal-code"
+            value={form.qualification.postal_code}
+            onChange={(e) => qualify("postal_code", e.target.value)}
+          />
+        </label>
+      </div>
+      <div className="field-grid">
+        <label>
           Preferred Date
           <input
             required
@@ -184,6 +299,35 @@ export function RequestForm() {
             min={new Date().toLocaleDateString("en-CA")}
             value={form.preferred_date}
             onChange={(e) => change("preferred_date", e.target.value)}
+          />
+        </label>
+      </div>
+      <label className="checkbox-row">
+        <input
+          type="checkbox"
+          checked={form.qualification.schedule_flexible}
+          onChange={(e) => qualify("schedule_flexible", e.target.checked)}
+        />
+        My Date Is Flexible for a Nearby Route Day
+      </label>
+      <div className="field-grid">
+        <label>
+          How Did You Find Us?
+          <select
+            value={form.qualification.lead_source}
+            onChange={(e) => qualify("lead_source", e.target.value)}
+          >
+            {leadSources.map((value) => (
+              <option key={value}>{value}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Referring Person or Business
+          <input
+            maxLength={200}
+            value={form.qualification.referral_details}
+            onChange={(e) => qualify("referral_details", e.target.value)}
           />
         </label>
       </div>

@@ -14,7 +14,12 @@ export function WorkspaceNav({
   const links = [
     [demo ? "/preview/admin" : "/admin", "Projects"],
     ["/admin/notifications", "Notifications"],
-    ...(role === "admin" ? [["/admin/team", "Team Access"]] : []),
+    ...(role === "admin"
+      ? [
+          ["/admin/team", "Team Access"],
+          ["/admin/pricing", "Pricing"],
+        ]
+      : []),
     ["/admin/account", "Account"],
     ["/admin/operations", "Operating Guide"],
   ];

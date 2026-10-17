@@ -3207,3 +3207,133 @@ td {
 .workspace-settings .fine-print {
   color: #5f6e64;
 }
+
+/* Guided estimates and equipment qualification share the workspace form rhythm. */
+.equipment-questions,
+.pricing-calculator,
+.customer-quote-preview,
+.qualification-summary,
+.pricing-record {
+  min-width: 0;
+  margin-block: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #d5dfd7;
+  border-radius: 16px;
+  background: #f8faf7;
+  overflow-wrap: anywhere;
+}
+.equipment-questions legend,
+.pricing-calculator legend {
+  font-weight: 700;
+  padding-inline: 0.4rem;
+}
+.equipment-questions label,
+.pricing-calculator label {
+  margin-block: 0.85rem;
+}
+.pricing-calculator fieldset {
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.pricing-calculator .form-grid,
+.pricing-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+.pricing-row {
+  padding-block: 1rem;
+  border-bottom: 1px solid #d5dfd7;
+}
+.pricing-row h3 {
+  grid-column: 1 / -1;
+}
+.pricing-calculator input,
+.pricing-calculator select,
+.pricing-calculator textarea {
+  width: 100%;
+  min-width: 0;
+}
+.pricing-calculator label:has(input[type="checkbox"]),
+.form-card .checkbox-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
+  line-height: 1.5;
+}
+.pricing-calculator input[type="checkbox"],
+.checkbox-row input[type="checkbox"] {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  margin-top: 0.15rem;
+}
+.pricing-calculator button:not(.button) {
+  min-height: 44px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #687d6c;
+  border-radius: 9px;
+  background: white;
+  color: #233b2b;
+  cursor: pointer;
+  margin-block: 0.5rem;
+}
+.pricing-calculator button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.pricing-calculator h4 {
+  margin-top: 1.75rem;
+}
+.pricing-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem 1rem;
+}
+.pricing-summary dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+.pricing-calculator ul {
+  padding-left: 1.25rem;
+}
+.pricing-calculator li {
+  margin-block: 0.65rem;
+}
+.pricing-record summary {
+  cursor: pointer;
+  min-height: 44px;
+  font-weight: 700;
+}
+.customer-quote-preview .invoice-lines > div {
+  gap: 1rem;
+  align-items: flex-start;
+}
+.customer-quote-preview .invoice-lines strong {
+  white-space: nowrap;
+}
+.qualification-summary .account-details dd {
+  white-space: pre-wrap;
+}
+@media (max-width: 480px) {
+  .equipment-questions,
+  .pricing-calculator,
+  .customer-quote-preview,
+  .qualification-summary,
+  .pricing-record {
+    padding: 1rem;
+  }
+  .pricing-summary {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+  .pricing-summary dd {
+    text-align: left;
+    margin-bottom: 0.75rem;
+  }
+}

@@ -4,8 +4,12 @@ import { useRouter } from "next/navigation";
 import { statusLabel } from "../lib/presentation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { Plus, Trash2, ArrowUpRight, Save } from "lucide-react";
+import { ArrowUpRight, Save } from "lucide-react";
 import { Conversation } from "./conversation";
+import { QuoteCalculator } from "./quote-calculator";
+import { PricingAudit } from "./pricing-audit";
+import { RequestQualificationSummary } from "./request-qualification";
+import type { PricingPlan, QuoteCalculation } from "../lib/pricing";
 import { canManageProjects, roleLabel } from "../lib/access";
 import { WorkspaceNav } from "./workspace-nav";
 import { ProjectActivity } from "./project-activity";
@@ -25,6 +29,8 @@ import {
   type LineItem,
 } from "../lib/catalog";
 type Draft = {
+  pricingPlan: PricingPlan | null;
+  calculation: QuoteCalculation | null;
   items: LineItem[];
   title: string;
   deposit: string;
@@ -40,6 +46,8 @@ export function AdminDashboard({
   demo?: boolean;
 }) {
   const router = useRouter();
+  const [pricingPlan, setPricingPlan] = useState<PricingPlan | null>(null);
+  const [calculation, setCalculation] = useState<QuoteCalculation | null>(null);
   const [section, setSection] = useState<ProjectSection>("overview");
   const [refreshing, startRefresh] = useTransition();
   const { reads, markRead } = useMessageReads(data.email || "sample-business");
@@ -56,9 +64,7 @@ export function AdminDashboard({
         data.jobs[0]?.id ||
         "",
     ),
-    [items, setItems] = useState<LineItem[]>([
-      { description: "", quantity: 1, unit_cents: 0 },
-    ]),
+    [items, setItems] = useState<LineItem[]>([]),
     [title, setTitle] = useState(""),
     [deposit, setDeposit] = useState(""),
     [due, setDue] = useState(""),
@@ -290,6 +296,8 @@ export function AdminDashboard({
                   onClick={() => {
                     if (j.id === selected) return;
                     drafts.current[selected] = {
+                      pricingPlan,
+                      calculation,
                       items,
                       title,
                       deposit,
@@ -300,11 +308,9 @@ export function AdminDashboard({
                     const next = drafts.current[j.id];
                     setSelected(j.id);
                     setSection("overview");
-                    setItems(
-                      next?.items || [
-                        { description: "", quantity: 1, unit_cents: 0 },
-                      ],
-                    );
+                    setItems(next?.items || []);
+                    setPricingPlan(next?.pricingPlan || null);
+                    setCalculation(next?.calculation || null);
                     setTitle(next?.title || "");
                     setDeposit(next?.deposit || "");
                     setDue(next?.due || "");
@@ -472,6 +478,7 @@ export function AdminDashboard({
                     </span>
                   </div>
                   <p className="job-description">{job.details}</p>
+                  <RequestQualificationSummary value={job.qualification} />
                   <p className="fine-print">
                     Preferred visit:{" "}
                     {job.preferred_date ? date(job.preferred_date) : "Flexible"}{" "}
@@ -658,6 +665,9 @@ export function AdminDashboard({
                                 </small>
                               )}
                             </div>
+                            {canEdit && (
+                              <PricingAudit invoiceId={i.id} demo={demo} />
+                            )}
                             {canEdit && i.client_cancellation_reason && (
                               <div className="cancellation-actions">
                                 <p className="fine-print">
@@ -709,6 +719,7 @@ export function AdminDashboard({
                           deposit_cents: Math.round(Number(deposit) * 100),
                           due_date: due,
                           terms,
+                          pricing_plan: pricingPlan,
                         });
                       }}
                     >
@@ -726,100 +737,44 @@ export function AdminDashboard({
                           onChange={(e) => setTitle(e.target.value)}
                         />
                       </label>
-                      <div className="quote-items">
-                        {items.map((item, n) => (
-                          <div className="quote-line" key={n}>
-                            <label>
-                              Description
-                              <input
-                                required
-                                maxLength={200}
-                                value={item.description}
-                                onChange={(e) =>
-                                  setItems((a) =>
-                                    a.map((x, i) =>
-                                      i === n
-                                        ? { ...x, description: e.target.value }
-                                        : x,
-                                    ),
-                                  )
-                                }
-                              />
-                            </label>
-                            <label>
-                              Qty
-                              <input
-                                type="number"
-                                required
-                                min={1}
-                                max={10000}
-                                step={1}
-                                value={item.quantity}
-                                onChange={(e) =>
-                                  setItems((a) =>
-                                    a.map((x, i) =>
-                                      i === n
-                                        ? {
-                                            ...x,
-                                            quantity: Number(e.target.value),
-                                          }
-                                        : x,
-                                    ),
-                                  )
-                                }
-                              />
-                            </label>
-                            <label>
-                              Unit Price ($)
-                              <input
-                                type="number"
-                                required
-                                min={0}
-                                max={100000}
-                                step="0.01"
-                                value={item.unit_cents / 100}
-                                onChange={(e) =>
-                                  setItems((a) =>
-                                    a.map((x, i) =>
-                                      i === n
-                                        ? {
-                                            ...x,
-                                            unit_cents: Math.round(
-                                              Number(e.target.value) * 100,
-                                            ),
-                                          }
-                                        : x,
-                                    ),
-                                  )
-                                }
-                              />
-                            </label>
-                            <button
-                              type="button"
-                              aria-label={`Remove line ${n + 1}`}
-                              disabled={items.length === 1}
-                              onClick={() =>
-                                setItems((a) => a.filter((_, i) => i !== n))
-                              }
-                            >
-                              <Trash2 size={17} />
-                            </button>
+                      <QuoteCalculator
+                        key={job.id}
+                        value={pricingPlan}
+                        demo={demo}
+                        service={job.service}
+                        equipmentSupply={job.qualification?.equipment_supply}
+                        disabled={!!busy}
+                        onChange={(plan, result) => {
+                          setPricingPlan(plan);
+                          setCalculation(result);
+                          setItems(result?.items || []);
+                          if (result && !title) setTitle(result.title);
+                        }}
+                      />
+                      {calculation && (
+                        <section className="customer-quote-preview">
+                          <h3>Customer Quote Preview</h3>
+                          <p className="fine-print">
+                            Only these selling prices and the agreed scope
+                            appear on the customer quote.
+                          </p>
+                          <div className="invoice-lines">
+                            {items.map((item, n) => (
+                              <div key={n}>
+                                <span>
+                                  {item.description} × {item.quantity}
+                                </span>
+                                <strong>
+                                  {money(item.quantity * item.unit_cents)}
+                                </strong>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        className="text-link"
-                        disabled={items.length >= 30}
-                        onClick={() =>
-                          setItems((a) => [
-                            ...a,
-                            { description: "", quantity: 1, unit_cents: 0 },
-                          ])
-                        }
-                      >
-                        <Plus size={15} /> Add line item
-                      </button>
+                          <p className="quote-terms">
+                            {calculation.scopeTerms}
+                          </p>
+                        </section>
+                      )}
                       <p className="quote-total">
                         Quote total <strong>{money(total)}</strong>
                       </p>
@@ -851,7 +806,7 @@ export function AdminDashboard({
                         <textarea
                           required
                           minLength={20}
-                          maxLength={2000}
+                          maxLength={1500}
                           rows={4}
                           value={terms}
                           onChange={(e) => setTerms(e.target.value)}
@@ -859,12 +814,22 @@ export function AdminDashboard({
                         />
                       </label>
                       <p className="fine-print">
-                        Include applicable materials, labor, travel, and any
-                        taxes as separate line items. This tool does not
-                        determine tax obligations. Issuing makes the quote
-                        visible to the customer.
+                        The deposit is credited toward the quote total. Review
+                        the scope, equipment, applicable tax and cancellation
+                        conditions before issuing. Issuing locks these amounts
+                        and makes the quote visible to the customer. Internal
+                        costs and pricing exception reasons stay private.
                       </p>
-                      <button disabled={!!busy} className="button">
+                      <button
+                        disabled={
+                          !!busy ||
+                          !calculation ||
+                          (calculation.requiresOverride &&
+                            (pricingPlan?.overrideReason.trim().length || 0) <
+                              10)
+                        }
+                        className="button"
+                      >
                         <Save size={17} />
                         {busy === "quote"
                           ? "Issuing…"

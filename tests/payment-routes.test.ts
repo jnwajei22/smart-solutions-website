@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { readFile } from "node:fs/promises";
 import ts from "typescript";
 import Stripe from "stripe";
+import { normalizeQualification } from "../lib/qualification.ts";
 import { services } from "../lib/catalog.ts";
 import { businessName, validPreferredDate } from "../lib/presentation.ts";
 import { amountToCharge } from "../lib/billing.ts";
@@ -561,6 +562,7 @@ test("request route requires a real preferred date before saving", async (t) => 
     "next/server": { NextResponse: { json } },
     "../../../lib/http": f.dependencies["../../../lib/http"],
     "../../../lib/catalog": { services },
+    "../../../lib/qualification": { normalizeQualification },
     "../../../lib/presentation": { businessName, validPreferredDate },
     "../../../lib/supabase": {
       configured: () => true,
@@ -598,6 +600,16 @@ test("request route requires a real preferred date before saving", async (t) => 
     service: "wifi",
     property_type: "Residential",
     preferred_date: "",
+    qualification: {
+      equipment_supply: "unsure",
+      equipment_details: "",
+      postal_code: "75104",
+      access_notes: "",
+      budget_range: "Not Sure Yet",
+      schedule_flexible: false,
+      lead_source: "Other",
+      referral_details: "",
+    },
   };
   await t.test(
     "missing and impossible dates return a customer-facing error",

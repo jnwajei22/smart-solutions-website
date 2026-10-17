@@ -2,6 +2,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import ts from "typescript";
+import {
+  defaultPriceBook,
+  calculateQuote,
+  createPricingPlan,
+} from "../lib/pricing.ts";
 const modules = new Map<string, unknown>();
 Object.assign(globalThis, { __dfwWorkflows: modules });
 let sequence = 0;
@@ -383,6 +388,10 @@ test("admin mutations require an admin, trusted origin and matching project invo
       fail: (error: string, status = 400) =>
         Response.json({ error }, { status }),
     },
+    "../../../lib/pricing": { calculateQuote },
+    "../../../lib/price-book-server": {
+      loadPriceBook: async () => defaultPriceBook,
+    },
     "../../../lib/access": await import("../lib/access.ts"),
     "../../../lib/billing": await import("../lib/billing.ts"),
     "../../../lib/presentation": await import("../lib/presentation.ts"),
@@ -419,10 +428,17 @@ test("admin mutations require an admin, trusted origin and matching project invo
   assert.equal(cancellations, 0);
   assert.equal((await run(cancellation)).status, 200);
   assert.equal(cancellations, 1);
+  const pricingPlan = {
+    ...createPricingPlan(),
+    dispatchLabel: "Cedar Hill",
+    equipmentDetails: "Existing router reviewed",
+    taxReviewed: true,
+  };
   const quote = {
+    pricing_plan: pricingPlan,
     action: "quote",
     request_id: "request",
-    items: [{ description: "Labor", quantity: 1, unit_cents: 10000 }],
+    items: calculateQuote(pricingPlan).items,
     title: "Test scope",
     terms: "Written cancellation terms for this test quote.",
     deposit_cents: 0,
