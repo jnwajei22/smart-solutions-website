@@ -81,3 +81,26 @@ test("operational failure logs exclude messages, identifiers and secrets", () =>
     code: "23505",
   });
 });
+
+test("business replies are not client messages when the operator also owns the request", () => {
+  const job = demoData.jobs[0];
+  const message = {
+    id: "context",
+    request_id: job.id,
+    author_id: job.customer_id,
+    body: "Team reply",
+    created_at: "2026-10-17T02:00:00Z",
+    sender_type: "business" as const,
+  };
+  assert.equal(
+    requestAttention(job, { ...demoData, messages: [message] }).needsReply,
+    false,
+  );
+  assert.equal(
+    requestAttention(job, {
+      ...demoData,
+      messages: [{ ...message, sender_type: "client" }],
+    }).needsReply,
+    true,
+  );
+});

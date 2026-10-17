@@ -130,6 +130,7 @@ export type Payment = {
   stripe_session_id: string;
 };
 export type Message = {
+  sender_type?: "client" | "business" | null;
   id: string;
   request_id: string;
   author_id: string;
