@@ -321,3 +321,110 @@ test("notification worker endpoint rejects public callers and unprivileged clien
     else process.env.CRON_SECRET = original;
   }
 });
+
+test("admin mutations require an admin, trusted origin and matching project invoice", async () => {
+  let allowedOrigin = true;
+  let signedIn = true;
+  let admin = false;
+  let invoiceMatches = false;
+  let databaseReads = 0;
+  let cancellations = 0;
+  let quotes = 0;
+  const db = {
+    from: (table: string) => ({
+      select() {
+        return this;
+      },
+      eq() {
+        return this;
+      },
+      single: async () => {
+        databaseReads++;
+        return {
+          data:
+            table === "requests"
+              ? { id: "request", customer_id: "customer" }
+              : invoiceMatches
+                ? { id: "invoice" }
+                : null,
+          error: null,
+        };
+      },
+    }),
+    rpc: async () => {
+      quotes++;
+      return { data: "quote", error: null };
+    },
+  };
+  const { POST } = await load("app/api/admin/route.ts", {
+    "next/server": {
+      NextResponse: {
+        json: (data: unknown, init?: ResponseInit) => Response.json(data, init),
+      },
+    },
+    "../../../lib/supabase": {
+      adminClient: () => db,
+      currentUser: async () => (signedIn ? { id: "admin" } : null),
+      isAdmin: async () => admin,
+      configured: () => true,
+    },
+    "../../../lib/cancellation": {
+      cancelInvoice: async () => {
+        cancellations++;
+      },
+    },
+    "../../../lib/notifications": { scheduleNotifications: () => {} },
+    "../../../lib/http": {
+      bodyJSON: async (r: Request) => r.json(),
+      sameOrigin: () => allowedOrigin,
+      fail: (error: string, status = 400) =>
+        Response.json({ error }, { status }),
+    },
+    "../../../lib/billing": await import("../lib/billing.ts"),
+    "../../../lib/presentation": await import("../lib/presentation.ts"),
+  });
+  const run = (body: unknown) =>
+    POST(
+      new Request("https://example.invalid/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
+  const cancellation = {
+    action: "cancel_invoice",
+    request_id: "request",
+    invoice_id: "invoice",
+    reason: "Client requested cancellation",
+    cancel_project: true,
+  };
+  assert.equal((await run(cancellation)).status, 403);
+  signedIn = false;
+  assert.equal((await run(cancellation)).status, 403);
+  signedIn = true;
+  admin = true;
+  allowedOrigin = false;
+  assert.equal((await run(cancellation)).status, 403);
+  assert.equal(databaseReads, 0);
+  allowedOrigin = true;
+  assert.equal((await run(cancellation)).status, 404);
+  assert.equal(cancellations, 0);
+  invoiceMatches = true;
+  assert.equal((await run({ ...cancellation, reason: "" })).status, 400);
+  assert.equal(cancellations, 0);
+  assert.equal((await run(cancellation)).status, 200);
+  assert.equal(cancellations, 1);
+  const quote = {
+    action: "quote",
+    request_id: "request",
+    items: [{ description: "Labor", quantity: 1, unit_cents: 10000 }],
+    title: "Test scope",
+    terms: "Written cancellation terms for this test quote.",
+    deposit_cents: 0,
+    due_date: "2026-02-30",
+  };
+  assert.equal((await run(quote)).status, 400);
+  assert.equal(quotes, 0);
+  assert.equal((await run({ ...quote, due_date: "2026-12-01" })).status, 201);
+  assert.equal(quotes, 1);
+});

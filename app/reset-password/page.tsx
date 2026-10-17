@@ -23,6 +23,8 @@ export default function Reset() {
                 password,
               });
               if (error) throw error;
+              // Clear the pre-recovery router cache after the session changes.
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination
               window.location.assign("/portal");
             } catch (e) {
               setMessage(
