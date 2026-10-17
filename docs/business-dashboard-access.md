@@ -12,8 +12,16 @@ Historical internal cancellation reasons remain historical; they are not relabel
 
 ## Verification
 
-79 local tests passed, including server authorization boundaries, exact verified email role lookup, immediate revocation under RLS, customer isolation, rejection of direct writes and role escalation, cancellation ownership, and an upgrade of pre-existing invoices with the service-role cancellation lifecycle. Lint and production build passed. The existing production dependency audit remains clean from the prior security update.
+80 local tests passed, including server authorization boundaries, exact verified email role lookup, immediate revocation under RLS, customer isolation, rejection of direct writes and role escalation, cancellation ownership, and an upgrade of pre-existing invoices with the service-role cancellation lifecycle. Lint and production build passed. The existing production dependency audit remains clean from the prior security update.
 
 Before the connected migration, restricted copies of existing invoices, profiles, cancellation function and affected read policies were saved in private_dashboard_backup_20261017. This is migration recovery within the same database, not a separate disaster-recovery backup. Post-migration checks confirmed existing invoices were preserved and no test team permissions or synthetic test projects/invoices remained. Security advisors reported no new warning or error; deny-all service-only tables produce expected RLS-no-policy info, and the previously documented leaked-password-protection warning remains.
 
 Business email delivery remains off pending domain and sender setup. Partner emails have not been added because none were supplied.
+
+## Hosted verification
+
+Stable preview verified after PRs #4 and #5 merged. Administrator sign-in, Team Access defaults (Viewer) and both role choices, desktop email status cards, client cancellation submission and reason editing, business read-only reason (zero reason textareas), cancellation completion, and client void/zero-due/no-edit state were verified in the browser. Database confirmed DFW-1002 void, paid zero, client reason preserved, and project cancelled. DFW-1002 remains clearly labeled as a synthetic QA invoice; the prior test invoice was left unchanged. No payment was taken and no email was sent. A final business reply retained business attribution even though the operator was also the test client.
+
+375px layout frames verified conversation bubbles and notification cards without horizontal overflow; these are CSS width checks, not physical-device testing. Native date entry did not work through this browser automation, so the isolated QA invoice was seeded with the database quote routine; quote API validation and production build passed.
+
+Sender context is recorded server-side on new messages as client or business, used consistently by conversation labels, reply attention, and email routing. Existing messages use their prior author-identity fallback.
