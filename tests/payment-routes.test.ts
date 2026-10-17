@@ -48,7 +48,10 @@ async function route(
   );
 }
 const origin = "https://branch.example";
-const originEnv = { NEXT_PUBLIC_SITE_URL: origin, NODE_ENV: "production" };
+const originEnv: NodeJS.ProcessEnv = {
+  NEXT_PUBLIC_SITE_URL: origin,
+  NODE_ENV: "production",
+};
 const json = (value: unknown, init?: ResponseInit) =>
   Response.json(value, init);
 const calls: Array<{ method: string; data: unknown }> = [];
@@ -78,6 +81,7 @@ function fixture() {
       payment_intent: "pi_test",
       amount_total: 2500,
     },
+    approvalConflict: false,
     providerFailure: false,
     rpcFailure: false,
   };
@@ -96,13 +100,15 @@ function fixture() {
           return chain;
         },
         update(data: unknown) {
+          filters.__update = true;
           calls.push({ method: `update:${table}`, data });
           return chain;
         },
         async single() {
           return {
             data:
-              filters.customer_id === state.invoice.customer_id
+              filters.customer_id === state.invoice.customer_id &&
+              !(filters.__update && state.approvalConflict)
                 ? state.invoice
                 : null,
             error: null,
@@ -248,11 +254,33 @@ test("checkout route: identity, pricing, cancellation and provider recovery", as
     await t.test(
       "approval records acceptance without creating a payment",
       async () => {
-        const { response } = await run(() => {}, {
-          invoice_id: "invoice-1",
-          kind: "accept",
-        });
+        const { response } = await run(
+          (f) => {
+            f.state.invoice.accepted_at = null;
+          },
+          {
+            invoice_id: "invoice-1",
+            kind: "accept",
+          },
+        );
         assert.deepEqual(await response.json(), { accepted: true });
+        assert.equal(
+          calls.some((c) => c.method === "reserve_checkout"),
+          false,
+        );
+      },
+    );
+    await t.test(
+      "approval that loses its status race returns a conflict",
+      async () => {
+        const { response } = await run(
+          (f) => {
+            f.state.invoice.accepted_at = null;
+            f.state.approvalConflict = true;
+          },
+          { invoice_id: "invoice-1", kind: "accept" },
+        );
+        assert.equal(response.status, 409);
         assert.equal(
           calls.some((c) => c.method === "reserve_checkout"),
           false,

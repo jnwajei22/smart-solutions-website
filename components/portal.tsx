@@ -281,6 +281,8 @@ export function Portal({
             <button
               onClick={async () => {
                 await browserClient().auth.signOut();
+                // Discard every cached authenticated route after sign-out.
+                // eslint-disable-next-line @next/next/no-location-assign-relative-destination
                 window.location.assign("/login");
               }}
             >

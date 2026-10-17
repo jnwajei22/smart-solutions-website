@@ -23,14 +23,22 @@ export async function POST(request: Request) {
     if (invoice.status !== "issued" || invoice.collection_paused_at)
       return fail("This invoice is not open for payment.");
     if (b.kind === "accept") {
-      const { error } = await db
+      if (invoice.accepted_at) return NextResponse.json({ accepted: true });
+      const { data: accepted, error } = await db
         .from("invoices")
         .update({ accepted_at: new Date().toISOString() })
         .eq("id", invoice.id)
+        .eq("customer_id", user.id)
         .eq("status", "issued")
         .is("collection_paused_at", null)
-        .is("accepted_at", null);
-      if (error) throw error;
+        .is("accepted_at", null)
+        .select("id")
+        .single();
+      if (error || !accepted)
+        return fail(
+          "The quote changed while you were approving it. Refresh your portal and review its current status.",
+          409,
+        );
       return NextResponse.json({ accepted: true });
     }
     if (!invoice.accepted_at)

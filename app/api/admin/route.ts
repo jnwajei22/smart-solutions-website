@@ -9,6 +9,7 @@ import {
 } from "../../../lib/supabase";
 import { bodyJSON, fail, sameOrigin } from "../../../lib/http";
 import { calculateTotal } from "../../../lib/billing";
+import { validPreferredDate } from "../../../lib/presentation";
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return fail("Request origin not allowed.", 403);
   if (!configured()) return fail("Account services are not configured.", 503);
@@ -124,11 +125,7 @@ export async function POST(request: Request) {
       b.deposit_cents > total
     )
       return fail("Deposit must be between zero and the quote total.");
-    if (
-      typeof b.due_date !== "string" ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(b.due_date) ||
-      Number.isNaN(Date.parse(b.due_date))
-    )
+    if (!validPreferredDate(b.due_date))
       return fail("Choose a valid due date.");
     const { data, error: quoteError } = await db.rpc("issue_quote", {
       p_request: job.id,

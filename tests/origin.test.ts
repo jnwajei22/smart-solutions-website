@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { trustedRequestOrigin } from "../lib/origin.ts";
-const env = {
+const env: NodeJS.ProcessEnv = {
   NODE_ENV: "production",
   VERCEL: "1",
   NEXT_PUBLIC_SITE_URL: "https://site.example",

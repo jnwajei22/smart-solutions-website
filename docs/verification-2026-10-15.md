@@ -95,3 +95,9 @@ No bypass credentials, signing secrets, or payment credentials are stored in thi
 - Applied the approved `invoice_cancellation_notifications` migration successfully. A connected-database service-role smoke check voided a synthetic invoice, cancelled its synthetic project and queued the notice, then rolled back every test record. The original request count was preserved and the outbox remained empty. Snapshot schema access is denied to authenticated users.
 - The security advisor reported no new warnings beyond the pre-existing leaked-password-protection setting; service-only queue/snapshot tables intentionally have RLS with no client policies.
 - SMTP remains disabled because no sender identity/inbox/provider credentials exist yet. Business mailbox and automated delivery setup remain pre-launch work. No notification email was sent during activation.
+
+## Release checks and security follow-up
+
+- Added secret-free GitHub push/PR checks using pinned actions and Node 24: production dependency audit, tests, lint and build. Updated Next.js/eslint-config-next to 16.4.2 after a production dependency audit found critical/high advisories in the previous dependency tree. Production-only audit is now clear; an unpatched development-only braces/ESLint glob advisory remains documented in docs/security-readiness.md.
+- Added admin authorization/project-matching regressions and impossible due-date rejection. Quote approval now detects a lost conditional-update race instead of reporting an approval that was not saved. 74 tests, lint and the updated production build pass locally.
+- The hosted admin page correctly redirects the signed-out browser to sign-in. Authenticated end-to-end cancellation remains pending that sign-in; no real hosted invoice cancellation is claimed from this check.
