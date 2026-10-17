@@ -1,7 +1,9 @@
 "use client";
 import { paymentActivity, statusLabel } from "../lib/presentation";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { invoiceState } from "../lib/workspace";
 import {
   LayoutDashboard,
   Layers,
@@ -35,6 +37,14 @@ export function Portal({
   data: PortalData;
   demo?: boolean;
 }) {
+  const router = useRouter();
+  const [refreshing, startRefresh] = useTransition();
+  const [notice, setNotice] = useState("");
+  const messageDrafts = useRef<Record<string, string>>({});
+  const refresh = useCallback(
+    () => startRefresh(() => router.refresh()),
+    [router],
+  );
   const menuToggle = useRef<HTMLButtonElement>(null);
   const [tab, setTab] = useState("overview"),
     [error, setError] = useState(""),
@@ -42,6 +52,13 @@ export function Portal({
     [mobile, setMobile] = useState(false),
     [message, setMessage] = useState(""),
     [messageJob, setMessageJob] = useState("");
+  useEffect(() => {
+    if (demo) return;
+    const timer = window.setInterval(() => {
+      if (!busy && document.visibilityState === "visible") refresh();
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, [demo, busy, refresh]);
   const outstanding = data.invoices
       .filter((i) => i.status !== "void")
       .reduce((a, i) => a + Math.max(0, i.total_cents - i.paid_cents), 0),
@@ -81,6 +98,7 @@ export function Portal({
   }
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
+    if (demo || busy) return;
     setBusy(messageJob);
     setError("");
     try {
@@ -91,7 +109,10 @@ export function Portal({
       });
       const d = await r.json();
       if (!r.ok) throw Error(d.error);
-      window.location.reload();
+      messageDrafts.current[messageJob] = "";
+      setMessage("");
+      setNotice("Message sent.");
+      refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to send update.");
     } finally {
@@ -116,15 +137,7 @@ export function Portal({
             <h3>{i.title}</h3>
           </div>
           <span className={`status ${i.status === "paid" ? "completed" : ""}`}>
-            {i.status === "paid"
-              ? "Paid"
-              : i.status === "void"
-                ? "Void"
-                : !i.accepted_at
-                  ? "Awaiting approval"
-                  : i.paid_cents
-                    ? "Deposit received"
-                    : "Payment due"}
+            {invoiceState(i)}
           </span>
         </div>
         {i.collection_paused_at && i.status !== "void" && (
@@ -276,6 +289,7 @@ export function Portal({
               <Settings2 size={17} /> Business dashboard
             </Link>
           )}
+          {!demo && <Link href="/account">Account Settings</Link>}
           <Link href="/help">Client help</Link>
           <Link href="/">
             Back to website <ArrowUpRight size={16} />
@@ -356,6 +370,28 @@ export function Portal({
               <Plus size={17} /> New request
             </Link>
           </div>
+          {!demo && (
+            <div className="portal-update-bar">
+              <span>
+                {refreshing
+                  ? "Checking for updates…"
+                  : "Updates checked every 30 seconds while this page is open."}
+              </span>
+              <button
+                type="button"
+                className="text-link"
+                disabled={!!busy || refreshing}
+                onClick={refresh}
+              >
+                Refresh
+              </button>
+            </div>
+          )}
+          {notice && (
+            <p role="status" className="fine-print">
+              {notice}
+            </p>
+          )}
           {error && (
             <div className="alert error" role="alert">
               {error}
@@ -571,7 +607,7 @@ export function Portal({
                       </button>
                     )}
                     <div className="project-messages">
-                      <h3>Project conversation</h3>
+                      <h3>Project Conversation</h3>
                       <Conversation
                         messages={data.messages.filter(
                           (m) => m.request_id === j.id,
@@ -587,6 +623,7 @@ export function Portal({
                               maxLength={2000}
                               minLength={3}
                               rows={3}
+                              disabled={!!busy}
                               value={message}
                               onChange={(e) => setMessage(e.target.value)}
                               placeholder="Ask a question, request a scheduling change, or discuss cancellation."
@@ -596,23 +633,34 @@ export function Portal({
                             className="button small"
                             disabled={!!busy || demo}
                           >
-                            Send update
+                            {busy === j.id ? "Sending…" : "Send Update"}
                           </button>
                           <button
                             type="button"
                             className="text-link"
-                            onClick={() => setMessageJob("")}
+                            disabled={!!busy}
+                            onClick={() => {
+                              messageDrafts.current[messageJob] = message;
+                              setMessageJob("");
+                            }}
                           >
                             Cancel
                           </button>
+                          {error && (
+                            <p role="alert" className="alert error">
+                              {error} Your draft is kept. Try Send Update again.
+                            </p>
+                          )}
                         </form>
                       ) : (
                         <button
                           className="text-link"
-                          disabled={demo}
+                          disabled={demo || !!busy}
                           onClick={() => {
+                            if (messageJob)
+                              messageDrafts.current[messageJob] = message;
                             setMessageJob(j.id);
-                            setMessage("");
+                            setMessage(messageDrafts.current[j.id] || "");
                           }}
                         >
                           Message us / request a change <ArrowRight size={15} />
