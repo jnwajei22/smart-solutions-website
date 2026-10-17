@@ -19,10 +19,10 @@ export default async function Operations() {
       <h1>From request to handoff.</h1>
       <h2>1. Check the workspace</h2>
       <p>
-        Refresh when you start work and check Need Review and Need a Reply.
-        Check Email Notifications for configuration and queue status. The
-        workspace remains the source for new requests and messages. Search by
-        client, company, email, or city.
+        The workspace checks for updates while open. Start with Need Review and
+        Need a Reply. Check Email Notifications for configuration and queue
+        status. The workspace remains the source for new requests and messages.
+        Search by client, company, email, or city.
       </p>
       <h2>2. Confirm the job</h2>
       <p>
@@ -57,12 +57,14 @@ export default async function Operations() {
         A checkout redirect is not proof of payment. Check Stripe and the
         invoice if a client reports a mismatch. Do not ask for another payment
         until the first is reconciled. Refunds are performed in Stripe; the
-        webhook records cumulative refunds. Use Cancel Invoice to pause
-        collection and close open checkouts first. If payments are retained,
-        issue the agreed refund in Stripe, wait for it to appear, then retry
-        cancellation. A void invoice stays void after refund events. Voiding
-        does not itself send money or erase payment history. To correct an
-        unpaid quote, void it and issue a replacement. For a paid scope change,
+        webhook records cumulative refunds. Clients request cancellation from
+        their portal, which pauses new collection. Use Complete Client
+        Cancellation to close existing checkouts and finish the request. If
+        payments are retained, issue the agreed refund in Stripe, wait for it to
+        appear, then retry cancellation. A void invoice stays void after refund
+        events. Voiding does not itself send money or erase payment history. To
+        correct an unpaid quote, have the client request cancellation before
+        completing it and issuing a replacement. For a paid scope change,
         resolve the refund and new agreement before replacing the invoice.
       </p>
       <h2>Failure response</h2>

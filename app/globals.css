@@ -2854,3 +2854,356 @@ td {
     padding-top: 28px;
   }
 }
+
+/* Business workspace navigation and focused project sections. */
+.workspace-header {
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+.workspace-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-top: 18px;
+  padding-bottom: 14px;
+}
+.workspace-brand-row > .text-link {
+  margin-left: auto;
+  font-size: 12px;
+}
+.workspace-role-pill {
+  font-size: 11px;
+  color: #345044;
+  background: #edf3ed;
+  padding: 6px 10px;
+  border-radius: 20px;
+}
+.workspace-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 22px;
+  padding-bottom: 0;
+}
+.workspace-navigation a {
+  padding: 13px 0;
+  border-bottom: 3px solid transparent;
+  font-size: 13px;
+  min-height: 46px;
+}
+.workspace-navigation a[aria-current="page"] {
+  border-color: var(--green);
+  color: var(--green);
+  font-weight: 650;
+}
+.admin-page {
+  max-width: 1440px;
+  padding-top: 30px;
+}
+.admin-page > .portal-heading {
+  margin-bottom: 20px;
+}
+.admin-page > .portal-heading h1 {
+  font-size: clamp(32px, 4vw, 44px);
+}
+.admin-page > .metrics {
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+.admin-grid {
+  grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.8fr);
+}
+.request-list-panel {
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+.admin-job {
+  min-height: 80px;
+}
+.admin-job[aria-pressed="true"] {
+  box-shadow: inset 3px 0 0 var(--green);
+}
+.admin-detail > h2 {
+  margin-bottom: 12px;
+}
+.project-heading-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 22px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.project-next-action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #eff5ef;
+  border: 1px solid #d8e6da;
+  border-radius: 10px;
+  margin-bottom: 24px;
+}
+.project-next-action > div {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.project-next-action strong {
+  display: block;
+  margin: 8px 0;
+  font-size: 17px;
+}
+.project-next-action p {
+  margin: 0;
+  color: #476052;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.project-next-action .eyebrow {
+  color: #41634b;
+}
+.project-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+  gap: 0 18px;
+  margin-bottom: 24px;
+}
+.project-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 48px;
+  padding: 12px 2px;
+  color: #526058;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  font-size: 13px;
+  font-weight: 550;
+}
+.project-tabs button[aria-selected="true"] {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+.project-section[hidden] {
+  display: none;
+}
+.project-section h3 {
+  font-size: 18px;
+  margin: 0 0 18px;
+}
+.project-section > label {
+  margin-top: 24px;
+}
+.project-section > .project-messages {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.project-section .conversation-thread {
+  max-height: 480px;
+}
+.conversation-heading {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.conversation-heading h3 {
+  margin: 0;
+}
+.conversation-heading > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.unread-indicator,
+.tab-count {
+  color: #fff !important;
+  background: #166348;
+  padding: 3px 7px;
+  border-radius: 12px;
+  font-size: 10px;
+  width: fit-content;
+}
+.jump-latest {
+  display: block;
+  margin: 12px auto;
+  padding: 10px 14px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: #fff;
+  color: var(--green);
+  font-size: 12px;
+}
+.quote-state {
+  justify-self: start;
+  padding: 7px 11px;
+  background: var(--pale);
+  color: #214934;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 11px;
+}
+.quote-state.paused {
+  background: #fff1d4;
+  color: #70500b;
+}
+.project-payment-history {
+  border-top: 1px solid var(--line);
+  margin-top: 26px;
+  padding-top: 24px;
+}
+.project-payment-history ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.project-payment-history li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.activity-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+}
+.activity-timeline li {
+  display: grid;
+  gap: 9px;
+  border-left: 2px solid #d8e5d8;
+  padding: 0 0 26px 20px;
+  margin-left: 4px;
+}
+.activity-timeline time {
+  font-size: 11px;
+  color: #5c6e62;
+}
+.activity-timeline strong {
+  font-size: 13px;
+}
+.activity-timeline p {
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.account-details {
+  display: grid;
+  gap: 0;
+  margin: 0 0 24px;
+}
+.account-details > div {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 18px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+}
+.account-details dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.account-details dd {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.portal-update-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #5a6b60;
+  font-size: 11px;
+  margin: -8px 0 24px;
+}
+.portal-update-bar button {
+  min-height: 44px;
+}
+.project-tabs button:focus-visible,
+.workspace-navigation a:focus-visible,
+.admin-job:focus-visible,
+.conversation-thread:focus-visible {
+  outline: 3px solid #b98b20;
+  outline-offset: 3px;
+}
+@media (max-width: 900px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+  .request-list-panel {
+    position: static;
+    max-height: 340px;
+  }
+}
+@media (max-width: 700px) {
+  .workspace-brand-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .workspace-role-pill {
+    font-size: 10px;
+  }
+  .workspace-navigation {
+    gap: 0 18px;
+  }
+  .workspace-navigation a {
+    font-size: 12px;
+  }
+  .project-next-action {
+    padding: 16px;
+  }
+  .project-tabs {
+    gap: 0 12px;
+  }
+  .project-tabs button {
+    font-size: 12px;
+  }
+  .admin-detail {
+    padding: 20px;
+  }
+  .account-details > div {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .project-section .conversation-thread {
+    max-height: 360px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* Native hidden panels must stay out of keyboard navigation and layout. */
+.project-section[hidden] {
+  display: none !important;
+}
+.admin-page .fine-print {
+  color: #5f6e64;
+}
+.workspace-settings .fine-print {
+  color: #5f6e64;
+}

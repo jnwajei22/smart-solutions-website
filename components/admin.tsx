@@ -2,12 +2,21 @@
 import { matchesRequest, requestAttention } from "../lib/operations";
 import { useRouter } from "next/navigation";
 import { statusLabel } from "../lib/presentation";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Plus, Trash2, ArrowUpRight, Save } from "lucide-react";
 import { Conversation } from "./conversation";
 import { canManageProjects, roleLabel } from "../lib/access";
-import { Brand } from "./brand";
+import { WorkspaceNav } from "./workspace-nav";
+import { ProjectActivity } from "./project-activity";
+import { useMessageReads } from "./message-reads";
+import {
+  projectSections,
+  nextProjectAction,
+  invoiceState,
+  unreadClientCount,
+  type ProjectSection,
+} from "../lib/workspace";
 import {
   money,
   date,
@@ -31,13 +40,22 @@ export function AdminDashboard({
   demo?: boolean;
 }) {
   const router = useRouter();
+  const [section, setSection] = useState<ProjectSection>("overview");
+  const [refreshing, startRefresh] = useTransition();
+  const { reads, markRead } = useMessageReads(data.email || "sample-business");
   const drafts = useRef<Record<string, Draft>>({});
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [notice, setNotice] = useState("");
+  const [failedAction, setFailedAction] = useState("");
   const role = data.businessRole || (demo ? "admin" : "viewer");
   const canEdit = canManageProjects(role);
-  const [selected, setSelected] = useState(data.jobs[0]?.id || ""),
+  const [selected, setSelected] = useState(
+      data.jobs.find((j) => !["cancelled", "completed"].includes(j.status))
+        ?.id ||
+        data.jobs[0]?.id ||
+        "",
+    ),
     [items, setItems] = useState<LineItem[]>([
       { description: "", quantity: 1, unit_cents: 0 },
     ]),
@@ -45,10 +63,29 @@ export function AdminDashboard({
     [deposit, setDeposit] = useState(""),
     [due, setDue] = useState(""),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false),
+    [busy, setBusy] = useState(""),
     [terms, setTerms] = useState(""),
     [message, setMessage] = useState("");
   const job = data.jobs.find((j) => j.id === selected);
+  const nextAction = job ? nextProjectAction(job, data) : null;
+  const projectMessages = data.messages.filter(
+    (m) => m.request_id === selected,
+  );
+  const latestMessageAt = projectMessages.at(-1)?.created_at;
+  const onConversationRead = () => {
+    if (latestMessageAt) markRead(selected, latestMessageAt);
+  };
+  const refresh = useCallback(
+    () => startRefresh(() => router.refresh()),
+    [router],
+  );
+  useEffect(() => {
+    if (demo) return;
+    const timer = window.setInterval(() => {
+      if (!busy && document.visibilityState === "visible") refresh();
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, [demo, busy, refresh]);
   const total = items.reduce((a, i) => a + i.quantity * i.unit_cents, 0);
   const attention = data.jobs.map((j) => ({
     job: j,
@@ -72,8 +109,10 @@ export function AdminDashboard({
       setError("Sample workspace: changes are not saved.");
       return;
     }
-    setBusy(true);
+    if (busy) return;
+    setBusy(body.action);
     setError("");
+    setFailedAction("");
     try {
       const r = await fetch("/api/admin", {
         method: "POST",
@@ -82,41 +121,34 @@ export function AdminDashboard({
       });
       const d = await r.json();
       if (!r.ok) throw Error(d.error);
-      setNotice("Saved. Your workspace is updating.");
+      setNotice(
+        body.action === "message"
+          ? "Reply sent."
+          : body.action === "quote"
+            ? "Quote issued."
+            : body.action === "cancel_invoice"
+              ? "Client cancellation completed."
+              : "Project status updated.",
+      );
       if (body.action === "message") setMessage("");
       router.refresh();
     } catch (e) {
+      setFailedAction(body.action);
       setError(e instanceof Error ? e.message : "Unable to save.");
       router.refresh();
     } finally {
-      setBusy(false);
+      setBusy("");
     }
   }
   return (
     <>
-      <header className="site-header">
-        <div className="container nav">
-          <Brand />
-          <span className="eyebrow">BUSINESS WORKSPACE</span>
-          <Link href="/admin/notifications" className="text-link">
-            Email Notifications
-          </Link>
-          {role === "admin" && (
-            <Link href="/admin/team" className="text-link">
-              Team Access
-            </Link>
-          )}
-          <Link href="/portal" className="text-link">
-            Client view <ArrowUpRight size={16} />
-          </Link>
-        </div>
-      </header>
+      {demo && <WorkspaceNav role={role} demo />}
       <main className="container admin-page">
         <div className="portal-heading">
           <div>
             <div className="eyebrow">DFW SMART SOLUTIONS</div>
-            <h1>From lead to connected.</h1>
-            <p>Your incoming requests, project scopes, and payment overview.</p>
+            <h1>Projects.</h1>
+            <p>Review requests, respond to clients, and keep work moving.</p>
           </div>
         </div>
         <p className="workspace-role">
@@ -171,20 +203,20 @@ export function AdminDashboard({
           <button
             type="button"
             className="button small outline"
-            disabled={busy || demo}
+            disabled={!!busy || demo}
             onClick={() => {
-              router.refresh();
+              refresh();
               setNotice(
                 "Checking for new requests and messages. Your unsent drafts are kept.",
               );
             }}
           >
-            Refresh Workspace
+            {refreshing ? "Checking for Updates…" : "Refresh Workspace"}
           </button>
         </div>
         <p className="fine-print">
-          New requests and messages appear here. Refresh to check for updates;
-          check Email Notifications for delivery status.{" "}
+          Checks for updates every 30 seconds while this page is visible. Unsent
+          drafts stay in this tab.{" "}
           <Link href="/admin/operations">Operating guide</Link>
         </p>
         {notice && (
@@ -234,13 +266,16 @@ export function AdminDashboard({
             </strong>
           </div>
         </div>
-        {error && (
+        {error && failedAction !== "message" && (
           <p className="alert error" role="alert">
             {error}
           </p>
         )}
         <div className="admin-grid">
-          <section className="panel">
+          <section
+            className="panel request-list-panel"
+            aria-label="Service Requests"
+          >
             <div className="panel-heading">
               <h2>Service requests</h2>
               <span>{data.jobs.length}</span>
@@ -248,9 +283,10 @@ export function AdminDashboard({
             {visible.length ? (
               visible.map(({ job: j, needsReply }) => (
                 <button
-                  disabled={busy}
+                  disabled={!!busy}
                   className={`admin-job ${selected === j.id ? "selected" : ""}`}
                   key={j.id}
+                  aria-pressed={selected === j.id}
                   onClick={() => {
                     if (j.id === selected) return;
                     drafts.current[selected] = {
@@ -263,6 +299,7 @@ export function AdminDashboard({
                     };
                     const next = drafts.current[j.id];
                     setSelected(j.id);
+                    setSection("overview");
                     setItems(
                       next?.items || [
                         { description: "", quantity: 1, unit_cents: 0 },
@@ -286,6 +323,20 @@ export function AdminDashboard({
                 >
                   <div>
                     <strong>{j.business_name || j.name}</strong>
+                    {unreadClientCount(
+                      data.messages.filter((m) => m.request_id === j.id),
+                      j.customer_id,
+                      reads[j.id],
+                    ) > 0 && (
+                      <small className="unread-indicator">
+                        {unreadClientCount(
+                          data.messages.filter((m) => m.request_id === j.id),
+                          j.customer_id,
+                          reads[j.id],
+                        )}{" "}
+                        Unread
+                      </small>
+                    )}
                     {needsReply && (
                       <small className="needs-reply">
                         Client Waiting for a Reply
@@ -310,380 +361,566 @@ export function AdminDashboard({
               </p>
             )}
           </section>
-          <section id="request-detail" className="panel admin-detail">
+          <section
+            id="request-detail"
+            className="panel admin-detail"
+            aria-busy={!!busy}
+          >
             {job ? (
               <>
                 <div className="eyebrow">REQUEST · {date(job.created_at)}</div>
                 <h2>{job.business_name || job.name}</h2>
                 {job.business_name && <p>Contact: {job.name}</p>}
-                <div className="contact-details">
-                  <a href={`mailto:${job.email}`}>{job.email}</a>
-                  <a href={`tel:${job.phone}`}>{job.phone}</a>
+                <div className="project-heading-status">
+                  <span className={`status ${job.status}`}>
+                    {statusLabel(job.status)}
+                  </span>
                   <span>
-                    {job.address}, {job.city}
+                    {services.find((s) => s.id === job.service)?.name}
                   </span>
                 </div>
-                <p className="job-description">{job.details}</p>
-                <p className="fine-print">
-                  Preferred visit:{" "}
-                  {job.preferred_date ? date(job.preferred_date) : "Flexible"} ·{" "}
-                  {job.property_type}
-                </p>
-                <div className="project-messages">
-                  <h3>Project Conversation</h3>
-                  <Conversation
-                    key={job.id}
-                    messages={data.messages.filter(
-                      (m) => m.request_id === job.id,
+                {nextAction && (
+                  <div className="project-next-action">
+                    <div>
+                      <span className="eyebrow">NEXT STEP</span>
+                      <strong>{nextAction.title}</strong>
+                      <p>{nextAction.detail}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="button small outline"
+                      onClick={() => {
+                        setSection(nextAction.section);
+                        document
+                          .getElementById(`project-tab-${nextAction.section}`)
+                          ?.focus();
+                      }}
+                    >
+                      {canEdit ? nextAction.action : "View Details"}
+                    </button>
+                  </div>
+                )}
+                <div
+                  className="project-tabs"
+                  role="tablist"
+                  aria-label="Project Sections"
+                  onKeyDown={(e) => {
+                    const tabs = Array.from(
+                      e.currentTarget.querySelectorAll<HTMLButtonElement>(
+                        '[role="tab"]',
+                      ),
+                    );
+                    const index = tabs.indexOf(
+                      document.activeElement as HTMLButtonElement,
+                    );
+                    let next = index;
+                    if (e.key === "ArrowRight")
+                      next = (index + 1) % tabs.length;
+                    else if (e.key === "ArrowLeft")
+                      next = (index - 1 + tabs.length) % tabs.length;
+                    else if (e.key === "Home") next = 0;
+                    else if (e.key === "End") next = tabs.length - 1;
+                    else return;
+                    e.preventDefault();
+                    setSection(projectSections[next].id);
+                    tabs[next].focus();
+                  }}
+                >
+                  {projectSections.map((t) => (
+                    <button
+                      type="button"
+                      role="tab"
+                      id={`project-tab-${t.id}`}
+                      aria-controls={`project-panel-${t.id}`}
+                      aria-selected={section === t.id}
+                      tabIndex={section === t.id ? 0 : -1}
+                      key={t.id}
+                      onClick={() => setSection(t.id)}
+                    >
+                      {t.label}
+                      {t.id === "conversation" &&
+                        job &&
+                        unreadClientCount(
+                          projectMessages,
+                          job.customer_id,
+                          reads[job.id],
+                        ) > 0 && (
+                          <span className="tab-count">
+                            {unreadClientCount(
+                              projectMessages,
+                              job.customer_id,
+                              reads[job.id],
+                            )}
+                          </span>
+                        )}
+                    </button>
+                  ))}
+                </div>
+                <section
+                  id="project-panel-overview"
+                  className="project-section"
+                  role="tabpanel"
+                  aria-labelledby="project-tab-overview"
+                  tabIndex={0}
+                  hidden={section !== "overview"}
+                >
+                  <div className="contact-details">
+                    <a href={`mailto:${job.email}`}>{job.email}</a>
+                    <a href={`tel:${job.phone}`}>{job.phone}</a>
+                    <span>
+                      {job.address}, {job.city}
+                    </span>
+                  </div>
+                  <p className="job-description">{job.details}</p>
+                  <p className="fine-print">
+                    Preferred visit:{" "}
+                    {job.preferred_date ? date(job.preferred_date) : "Flexible"}{" "}
+                    · {job.property_type}
+                  </p>
+                  <label>
+                    Project Status
+                    <select
+                      value={job.status}
+                      disabled={!!busy || !canEdit}
+                      onChange={(e) =>
+                        send({
+                          action: "status",
+                          request_id: job.id,
+                          status: e.target.value,
+                        })
+                      }
+                    >
+                      {[
+                        "requested",
+                        "reviewing",
+                        "quoted",
+                        "scheduled",
+                        "in_progress",
+                        "completed",
+                        ...(job.status === "cancelled" ? ["cancelled"] : []),
+                      ].map((s) => (
+                        <option key={s} value={s}>
+                          {statusLabel(s)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {!data.invoices.some(
+                    (i) => i.request_id === job.id && i.status !== "void",
+                  ) &&
+                    data.invoices
+                      .filter(
+                        (i) => i.request_id === job.id && i.status === "void",
+                      )
+                      .map((i) => (
+                        <p key={i.id}>
+                          Cancelled Invoice:{" "}
+                          <Link href={`/invoices/${i.id}`}>{i.number}</Link> ·{" "}
+                          {i.cancellation_reason}
+                        </p>
+                      ))}
+                  {!data.invoices.some(
+                    (i) => i.request_id === job.id && i.status !== "void",
+                  ) &&
+                    job.status !== "cancelled" &&
+                    canEdit && (
+                      <button
+                        className="text-link"
+                        disabled={!!busy}
+                        onClick={() =>
+                          send({
+                            action: "status",
+                            request_id: job.id,
+                            status: "cancelled",
+                          })
+                        }
+                      >
+                        Cancel Project
+                      </button>
                     )}
-                    customerId={job.customer_id}
-                    business
-                  />
-                  {canEdit && (
+                </section>
+                <section
+                  id="project-panel-conversation"
+                  className="project-section"
+                  role="tabpanel"
+                  aria-labelledby="project-tab-conversation"
+                  tabIndex={0}
+                  hidden={section !== "conversation"}
+                >
+                  <div className="project-messages">
+                    <div className="conversation-heading">
+                      <h3>Project Conversation</h3>
+                      <span>{projectMessages.length} Messages</span>
+                    </div>
+                    <p className="fine-print">
+                      Unread markers are saved for this browser. Reading a
+                      message does not mark it as replied.
+                    </p>
+                    <Conversation
+                      active={section === "conversation"}
+                      onRead={onConversationRead}
+                      key={job.id}
+                      messages={data.messages.filter(
+                        (m) => m.request_id === job.id,
+                      )}
+                      customerId={job.customer_id}
+                      business
+                    />
+                    {canEdit && (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          send({
+                            action: "message",
+                            request_id: job.id,
+                            body: message,
+                          });
+                        }}
+                      >
+                        <label>
+                          Reply to Client
+                          <textarea
+                            required
+                            minLength={3}
+                            maxLength={2000}
+                            rows={3}
+                            disabled={!!busy}
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                          />
+                        </label>
+                        <button className="button small" disabled={!!busy}>
+                          {busy === "message"
+                            ? "Sending…"
+                            : error && failedAction === "message"
+                              ? "Retry Reply"
+                              : "Send Reply"}
+                        </button>
+                      </form>
+                    )}
+                    {error && failedAction === "message" && (
+                      <p className="alert error" role="alert">
+                        {error} Your draft is kept. Retry when you’re ready.
+                      </p>
+                    )}
+                  </div>
+                </section>
+                <section
+                  id="project-panel-quote"
+                  className="project-section"
+                  role="tabpanel"
+                  aria-labelledby="project-tab-quote"
+                  tabIndex={0}
+                  hidden={section !== "quote"}
+                >
+                  {data.invoices.some(
+                    (i) => i.request_id === job.id && i.status !== "void",
+                  ) ? (
+                    <>
+                      <h3>Issued Quote</h3>
+                      {data.invoices
+                        .filter(
+                          (i) => i.request_id === job.id && i.status !== "void",
+                        )
+                        .map((i) => (
+                          <div className="admin-invoice" key={i.id}>
+                            <span
+                              className={`quote-state ${i.collection_paused_at ? "paused" : ""}`}
+                            >
+                              {invoiceState(i)}
+                            </span>
+                            <div>
+                              <strong>
+                                {i.number} · {i.title}
+                              </strong>
+                              <p>
+                                {money(i.total_cents)} total ·{" "}
+                                {money(i.paid_cents)} paid · {invoiceState(i)}
+                              </p>
+                            </div>
+                            {i.collection_paused_at && i.status !== "void" && (
+                              <p className="alert">
+                                Collection Paused. Resolve pending
+                                payments/refunds, then retry cancellation.
+                              </p>
+                            )}
+                            <div className="cancellation-summary">
+                              <strong>Client Cancellation Reason</strong>
+                              <p>
+                                {i.client_cancellation_reason ||
+                                  "No cancellation requested by the client."}
+                              </p>
+                              {i.client_cancellation_requested_at && (
+                                <small>
+                                  Requested{" "}
+                                  {date(i.client_cancellation_requested_at)} ·
+                                  Only the client can edit this reason.
+                                </small>
+                              )}
+                            </div>
+                            {canEdit && i.client_cancellation_reason && (
+                              <div className="cancellation-actions">
+                                <p className="fine-print">
+                                  Close open checkouts and complete cancellation
+                                  once any required refunds have cleared. This
+                                  does not issue a refund.
+                                </p>
+                                <button
+                                  type="button"
+                                  className="button small outline"
+                                  disabled={!!busy}
+                                  onClick={() =>
+                                    send({
+                                      action: "cancel_invoice",
+                                      request_id: job.id,
+                                      invoice_id: i.id,
+                                    })
+                                  }
+                                >
+                                  {busy
+                                    ? "Processing…"
+                                    : "Complete Client Cancellation"}
+                                </button>
+                              </div>
+                            )}
+                            <Link
+                              href={`/invoices/${i.id}`}
+                              className="text-link"
+                            >
+                              View / print <ArrowUpRight size={16} />
+                            </Link>
+                          </div>
+                        ))}
+                      <p className="fine-print">
+                        Issued amounts are locked. Confirm all scope and pricing
+                        before issuing a quote.
+                      </p>
+                    </>
+                  ) : canEdit &&
+                    !["cancelled", "completed"].includes(job.status) ? (
                     <form
                       onSubmit={(e) => {
                         e.preventDefault();
                         send({
-                          action: "message",
+                          action: "quote",
                           request_id: job.id,
-                          body: message,
+                          title,
+                          items,
+                          deposit_cents: Math.round(Number(deposit) * 100),
+                          due_date: due,
+                          terms,
                         });
                       }}
                     >
+                      <div className="form-section-title">
+                        <span>Q</span>
+                        <h2>Build a project quote</h2>
+                      </div>
                       <label>
-                        Reply to Client
+                        Project Title
+                        <input
+                          value={title}
+                          required
+                          maxLength={150}
+                          placeholder="e.g. Home office Ethernet installation"
+                          onChange={(e) => setTitle(e.target.value)}
+                        />
+                      </label>
+                      <div className="quote-items">
+                        {items.map((item, n) => (
+                          <div className="quote-line" key={n}>
+                            <label>
+                              Description
+                              <input
+                                required
+                                maxLength={200}
+                                value={item.description}
+                                onChange={(e) =>
+                                  setItems((a) =>
+                                    a.map((x, i) =>
+                                      i === n
+                                        ? { ...x, description: e.target.value }
+                                        : x,
+                                    ),
+                                  )
+                                }
+                              />
+                            </label>
+                            <label>
+                              Qty
+                              <input
+                                type="number"
+                                required
+                                min={1}
+                                max={10000}
+                                step={1}
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  setItems((a) =>
+                                    a.map((x, i) =>
+                                      i === n
+                                        ? {
+                                            ...x,
+                                            quantity: Number(e.target.value),
+                                          }
+                                        : x,
+                                    ),
+                                  )
+                                }
+                              />
+                            </label>
+                            <label>
+                              Unit Price ($)
+                              <input
+                                type="number"
+                                required
+                                min={0}
+                                max={100000}
+                                step="0.01"
+                                value={item.unit_cents / 100}
+                                onChange={(e) =>
+                                  setItems((a) =>
+                                    a.map((x, i) =>
+                                      i === n
+                                        ? {
+                                            ...x,
+                                            unit_cents: Math.round(
+                                              Number(e.target.value) * 100,
+                                            ),
+                                          }
+                                        : x,
+                                    ),
+                                  )
+                                }
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              aria-label={`Remove line ${n + 1}`}
+                              disabled={items.length === 1}
+                              onClick={() =>
+                                setItems((a) => a.filter((_, i) => i !== n))
+                              }
+                            >
+                              <Trash2 size={17} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className="text-link"
+                        disabled={items.length >= 30}
+                        onClick={() =>
+                          setItems((a) => [
+                            ...a,
+                            { description: "", quantity: 1, unit_cents: 0 },
+                          ])
+                        }
+                      >
+                        <Plus size={15} /> Add line item
+                      </button>
+                      <p className="quote-total">
+                        Quote total <strong>{money(total)}</strong>
+                      </p>
+                      <div className="field-grid">
+                        <label>
+                          Deposit ($)
+                          <input
+                            type="number"
+                            min={0}
+                            max={total / 100}
+                            step="0.01"
+                            required
+                            value={deposit}
+                            onChange={(e) => setDeposit(e.target.value)}
+                          />
+                        </label>
+                        <label>
+                          Due Date
+                          <input
+                            type="date"
+                            required
+                            value={due}
+                            onChange={(e) => setDue(e.target.value)}
+                          />
+                        </label>
+                      </div>
+                      <label>
+                        Project Terms & Deposit Conditions
                         <textarea
                           required
-                          minLength={3}
+                          minLength={20}
                           maxLength={2000}
-                          rows={3}
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
+                          rows={4}
+                          value={terms}
+                          onChange={(e) => setTerms(e.target.value)}
+                          placeholder="Describe deposit use, cancellation/refund terms, material commitments, timing, and any project-specific exclusions."
                         />
                       </label>
-                      <button className="button small" disabled={busy}>
-                        Send Reply
+                      <p className="fine-print">
+                        Include applicable materials, labor, travel, and any
+                        taxes as separate line items. This tool does not
+                        determine tax obligations. Issuing makes the quote
+                        visible to the customer.
+                      </p>
+                      <button disabled={!!busy} className="button">
+                        <Save size={17} />
+                        {busy === "quote"
+                          ? "Issuing…"
+                          : "Issue Quote & Invoice"}
                       </button>
                     </form>
-                  )}
-                </div>
-                <label>
-                  Project Status
-                  <select
-                    value={job.status}
-                    disabled={busy || !canEdit}
-                    onChange={(e) =>
-                      send({
-                        action: "status",
-                        request_id: job.id,
-                        status: e.target.value,
-                      })
-                    }
-                  >
-                    {[
-                      "requested",
-                      "reviewing",
-                      "quoted",
-                      "scheduled",
-                      "in_progress",
-                      "completed",
-                      ...(job.status === "cancelled" ? ["cancelled"] : []),
-                    ].map((s) => (
-                      <option key={s} value={s}>
-                        {statusLabel(s)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {!data.invoices.some(
-                  (i) => i.request_id === job.id && i.status !== "void",
-                ) &&
-                  data.invoices
-                    .filter(
-                      (i) => i.request_id === job.id && i.status === "void",
-                    )
-                    .map((i) => (
-                      <p key={i.id}>
-                        Cancelled Invoice:{" "}
-                        <Link href={`/invoices/${i.id}`}>{i.number}</Link> ·{" "}
-                        {i.cancellation_reason}
+                  ) : (
+                    <p className="empty-inline">
+                      {["cancelled", "completed"].includes(job.status)
+                        ? "This project is closed. Change its status to Reviewing before preparing a new quote."
+                        : "No quote issued yet. A project manager can prepare one."}
+                    </p>
+                  )}{" "}
+                  <div className="project-payment-history">
+                    <h3>Payment History</h3>
+                    {data.payments.filter((p) =>
+                      data.invoices.some(
+                        (i) => i.id === p.invoice_id && i.request_id === job.id,
+                      ),
+                    ).length ? (
+                      <ul>
+                        {data.payments
+                          .filter((p) =>
+                            data.invoices.some(
+                              (i) =>
+                                i.id === p.invoice_id &&
+                                i.request_id === job.id,
+                            ),
+                          )
+                          .map((p) => (
+                            <li key={p.id}>
+                              <span>{date(p.created_at)}</span>
+                              <strong>{money(p.amount_cents)}</strong>
+                              {p.refunded_cents > 0 && (
+                                <span>{money(p.refunded_cents)} Refunded</span>
+                              )}
+                            </li>
+                          ))}
+                      </ul>
+                    ) : (
+                      <p className="empty-inline">
+                        No payments recorded for this project.
                       </p>
-                    ))}
-                {!data.invoices.some(
-                  (i) => i.request_id === job.id && i.status !== "void",
-                ) &&
-                  job.status !== "cancelled" &&
-                  canEdit && (
-                    <button
-                      className="text-link"
-                      disabled={busy}
-                      onClick={() =>
-                        send({
-                          action: "status",
-                          request_id: job.id,
-                          status: "cancelled",
-                        })
-                      }
-                    >
-                      Cancel Project
-                    </button>
-                  )}
-                {data.invoices.some(
-                  (i) => i.request_id === job.id && i.status !== "void",
-                ) ? (
-                  <>
-                    <h3>Issued Quote</h3>
-                    {data.invoices
-                      .filter(
-                        (i) => i.request_id === job.id && i.status !== "void",
-                      )
-                      .map((i) => (
-                        <div className="admin-invoice" key={i.id}>
-                          <div>
-                            <strong>
-                              {i.number} · {i.title}
-                            </strong>
-                            <p>
-                              {money(i.total_cents)} total ·{" "}
-                              {money(i.paid_cents)} paid ·{" "}
-                              {statusLabel(i.status)}
-                            </p>
-                          </div>
-                          {i.collection_paused_at && i.status !== "void" && (
-                            <p className="alert">
-                              Collection Paused. Resolve pending
-                              payments/refunds, then retry cancellation.
-                            </p>
-                          )}
-                          <div className="cancellation-summary">
-                            <strong>Client Cancellation Reason</strong>
-                            <p>
-                              {i.client_cancellation_reason ||
-                                "No cancellation requested by the client."}
-                            </p>
-                            {i.client_cancellation_requested_at && (
-                              <small>
-                                Requested{" "}
-                                {date(i.client_cancellation_requested_at)} ·
-                                Only the client can edit this reason.
-                              </small>
-                            )}
-                          </div>
-                          {canEdit && i.client_cancellation_reason && (
-                            <div className="cancellation-actions">
-                              <p className="fine-print">
-                                Close open checkouts and complete cancellation
-                                once any required refunds have cleared. This
-                                does not issue a refund.
-                              </p>
-                              <button
-                                type="button"
-                                className="button small outline"
-                                disabled={busy}
-                                onClick={() =>
-                                  send({
-                                    action: "cancel_invoice",
-                                    request_id: job.id,
-                                    invoice_id: i.id,
-                                  })
-                                }
-                              >
-                                {busy
-                                  ? "Processing…"
-                                  : "Complete Client Cancellation"}
-                              </button>
-                            </div>
-                          )}
-                          <Link
-                            href={`/invoices/${i.id}`}
-                            className="text-link"
-                          >
-                            View / print <ArrowUpRight size={16} />
-                          </Link>
-                        </div>
-                      ))}
-                    <p className="fine-print">
-                      Issued amounts are locked. Confirm all scope and pricing
-                      before issuing a quote.
-                    </p>
-                  </>
-                ) : canEdit ? (
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      send({
-                        action: "quote",
-                        request_id: job.id,
-                        title,
-                        items,
-                        deposit_cents: Math.round(Number(deposit) * 100),
-                        due_date: due,
-                        terms,
-                      });
-                    }}
-                  >
-                    <div className="form-section-title">
-                      <span>Q</span>
-                      <h2>Build a project quote</h2>
-                    </div>
-                    <label>
-                      Project Title
-                      <input
-                        value={title}
-                        required
-                        maxLength={150}
-                        placeholder="e.g. Home office Ethernet installation"
-                        onChange={(e) => setTitle(e.target.value)}
-                      />
-                    </label>
-                    <div className="quote-items">
-                      {items.map((item, n) => (
-                        <div className="quote-line" key={n}>
-                          <label>
-                            Description
-                            <input
-                              required
-                              maxLength={200}
-                              value={item.description}
-                              onChange={(e) =>
-                                setItems((a) =>
-                                  a.map((x, i) =>
-                                    i === n
-                                      ? { ...x, description: e.target.value }
-                                      : x,
-                                  ),
-                                )
-                              }
-                            />
-                          </label>
-                          <label>
-                            Qty
-                            <input
-                              type="number"
-                              required
-                              min={1}
-                              max={10000}
-                              step={1}
-                              value={item.quantity}
-                              onChange={(e) =>
-                                setItems((a) =>
-                                  a.map((x, i) =>
-                                    i === n
-                                      ? {
-                                          ...x,
-                                          quantity: Number(e.target.value),
-                                        }
-                                      : x,
-                                  ),
-                                )
-                              }
-                            />
-                          </label>
-                          <label>
-                            Unit Price ($)
-                            <input
-                              type="number"
-                              required
-                              min={0}
-                              max={100000}
-                              step="0.01"
-                              value={item.unit_cents / 100}
-                              onChange={(e) =>
-                                setItems((a) =>
-                                  a.map((x, i) =>
-                                    i === n
-                                      ? {
-                                          ...x,
-                                          unit_cents: Math.round(
-                                            Number(e.target.value) * 100,
-                                          ),
-                                        }
-                                      : x,
-                                  ),
-                                )
-                              }
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            aria-label={`Remove line ${n + 1}`}
-                            disabled={items.length === 1}
-                            onClick={() =>
-                              setItems((a) => a.filter((_, i) => i !== n))
-                            }
-                          >
-                            <Trash2 size={17} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="text-link"
-                      disabled={items.length >= 30}
-                      onClick={() =>
-                        setItems((a) => [
-                          ...a,
-                          { description: "", quantity: 1, unit_cents: 0 },
-                        ])
-                      }
-                    >
-                      <Plus size={15} /> Add line item
-                    </button>
-                    <p className="quote-total">
-                      Quote total <strong>{money(total)}</strong>
-                    </p>
-                    <div className="field-grid">
-                      <label>
-                        Deposit ($)
-                        <input
-                          type="number"
-                          min={0}
-                          max={total / 100}
-                          step="0.01"
-                          required
-                          value={deposit}
-                          onChange={(e) => setDeposit(e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        Due Date
-                        <input
-                          type="date"
-                          required
-                          value={due}
-                          onChange={(e) => setDue(e.target.value)}
-                        />
-                      </label>
-                    </div>
-                    <label>
-                      Project Terms & Deposit Conditions
-                      <textarea
-                        required
-                        minLength={20}
-                        maxLength={2000}
-                        rows={4}
-                        value={terms}
-                        onChange={(e) => setTerms(e.target.value)}
-                        placeholder="Describe deposit use, cancellation/refund terms, material commitments, timing, and any project-specific exclusions."
-                      />
-                    </label>
-                    <p className="fine-print">
-                      Include applicable materials, labor, travel, and any taxes
-                      as separate line items. This tool does not determine tax
-                      obligations. Issuing makes the quote visible to the
-                      customer.
-                    </p>
-                    <button disabled={busy} className="button">
-                      <Save size={17} />
-                      {busy ? "Issuing…" : "Issue quote & invoice"}
-                    </button>
-                  </form>
-                ) : (
-                  <p className="empty-inline">
-                    No quote issued yet. A project manager can prepare one.
-                  </p>
-                )}
+                    )}
+                  </div>
+                </section>
+                <section
+                  id="project-panel-activity"
+                  className="project-section"
+                  role="tabpanel"
+                  aria-labelledby="project-tab-activity"
+                  tabIndex={0}
+                  hidden={section !== "activity"}
+                >
+                  <ProjectActivity job={job} data={data} />{" "}
+                </section>
               </>
             ) : (
               <div className="empty-state">
