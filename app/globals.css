@@ -3258,8 +3258,9 @@ td {
   min-width: 0;
 }
 .pricing-calculator label:has(input[type="checkbox"]),
-.checkbox-row {
+.form-card .checkbox-row {
   display: flex;
+  flex-direction: row;
   align-items: flex-start;
   gap: 0.75rem;
   line-height: 1.5;
