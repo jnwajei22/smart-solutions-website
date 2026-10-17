@@ -1,3 +1,4 @@
+import { scheduleNotifications } from "../../../lib/notifications";
 import { logFailure } from "../../../lib/observability";
 import { NextResponse } from "next/server";
 import { currentUser, adminClient, configured } from "../../../lib/supabase";
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
       .select("id")
       .single();
     if (error) throw error;
+    scheduleNotifications();
     return NextResponse.json({ id: data.id }, { status: 201 });
   } catch (error) {
     logFailure("request_save_failed", error);

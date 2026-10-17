@@ -33,6 +33,8 @@ export function AdminDashboard({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [notice, setNotice] = useState("");
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [cancelProject, setCancelProject] = useState(false);
   const [selected, setSelected] = useState(data.jobs[0]?.id || ""),
     [items, setItems] = useState<LineItem[]>([
       { description: "", quantity: 1, unit_cents: 0 },
@@ -79,6 +81,7 @@ export function AdminDashboard({
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to save.");
+      router.refresh();
     } finally {
       setBusy(false);
     }
@@ -89,6 +92,9 @@ export function AdminDashboard({
         <div className="container nav">
           <Brand />
           <span className="eyebrow">BUSINESS WORKSPACE</span>
+          <Link href="/admin/notifications" className="text-link">
+            Email Notifications
+          </Link>
           <Link href="/portal" className="text-link">
             Client view <ArrowUpRight size={16} />
           </Link>
@@ -163,7 +169,7 @@ export function AdminDashboard({
         </div>
         <p className="fine-print">
           New requests and messages appear here. Refresh to check for updates;
-          email alerts are not enabled.{" "}
+          check Email Notifications for delivery status.{" "}
           <Link href="/admin/operations">Operating guide</Link>
         </p>
         {notice && (
@@ -241,6 +247,8 @@ export function AdminDashboard({
                     };
                     const next = drafts.current[j.id];
                     setSelected(j.id);
+                    setCancellationReason("");
+                    setCancelProject(false);
                     setItems(
                       next?.items || [
                         { description: "", quantity: 1, unit_cents: 0 },
@@ -368,7 +376,7 @@ export function AdminDashboard({
                       "scheduled",
                       "in_progress",
                       "completed",
-                      "cancelled",
+                      ...(job.status === "cancelled" ? ["cancelled"] : []),
                     ].map((s) => (
                       <option key={s} value={s}>
                         {statusLabel(s)}
@@ -376,11 +384,47 @@ export function AdminDashboard({
                     ))}
                   </select>
                 </label>
-                {data.invoices.some((i) => i.request_id === job.id) ? (
+                {!data.invoices.some(
+                  (i) => i.request_id === job.id && i.status !== "void",
+                ) &&
+                  data.invoices
+                    .filter(
+                      (i) => i.request_id === job.id && i.status === "void",
+                    )
+                    .map((i) => (
+                      <p key={i.id}>
+                        Cancelled Invoice:{" "}
+                        <Link href={`/invoices/${i.id}`}>{i.number}</Link> ·{" "}
+                        {i.cancellation_reason}
+                      </p>
+                    ))}
+                {!data.invoices.some(
+                  (i) => i.request_id === job.id && i.status !== "void",
+                ) &&
+                  job.status !== "cancelled" && (
+                    <button
+                      className="text-link"
+                      disabled={busy}
+                      onClick={() =>
+                        send({
+                          action: "status",
+                          request_id: job.id,
+                          status: "cancelled",
+                        })
+                      }
+                    >
+                      Cancel Project
+                    </button>
+                  )}
+                {data.invoices.some(
+                  (i) => i.request_id === job.id && i.status !== "void",
+                ) ? (
                   <>
                     <h3>Issued quote</h3>
                     {data.invoices
-                      .filter((i) => i.request_id === job.id)
+                      .filter(
+                        (i) => i.request_id === job.id && i.status !== "void",
+                      )
                       .map((i) => (
                         <div className="admin-invoice" key={i.id}>
                           <div>
@@ -393,6 +437,64 @@ export function AdminDashboard({
                               {statusLabel(i.status)}
                             </p>
                           </div>
+                          {i.collection_paused_at && i.status !== "void" && (
+                            <p className="alert">
+                              Collection Paused. Resolve pending
+                              payments/refunds, then retry cancellation.
+                            </p>
+                          )}
+                          {i.cancellation_reason && (
+                            <p>{i.cancellation_reason}</p>
+                          )}
+                          {i.status !== "void" && (
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                send({
+                                  action: "cancel_invoice",
+                                  request_id: job.id,
+                                  invoice_id: i.id,
+                                  reason: cancellationReason,
+                                  cancel_project: cancelProject,
+                                });
+                              }}
+                            >
+                              <label>
+                                Cancellation Reason
+                                <textarea
+                                  required
+                                  minLength={3}
+                                  maxLength={500}
+                                  value={cancellationReason}
+                                  onChange={(e) =>
+                                    setCancellationReason(e.target.value)
+                                  }
+                                />
+                              </label>
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  checked={cancelProject}
+                                  onChange={(e) =>
+                                    setCancelProject(e.target.checked)
+                                  }
+                                />{" "}
+                                Also Cancel Project
+                              </label>
+                              <p className="fine-print">
+                                Pauses collection and closes open checkouts.
+                                Voids only when no retained payment or
+                                unresolved checkout remains. Refunds must be
+                                issued separately in Stripe. This action cannot
+                                undo a completed void.
+                              </p>
+                              <button className="button small" disabled={busy}>
+                                {i.collection_paused_at
+                                  ? "Retry Cancellation"
+                                  : "Cancel Invoice"}
+                              </button>
+                            </form>
+                          )}
                           <Link
                             href={`/invoices/${i.id}`}
                             className="text-link"

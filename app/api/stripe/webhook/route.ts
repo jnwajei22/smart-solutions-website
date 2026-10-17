@@ -1,3 +1,4 @@
+import { scheduleNotifications } from "../../../../lib/notifications";
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { adminClient, configured } from "../../../../lib/supabase";
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
       });
       if (error) throw error;
     }
+    scheduleNotifications();
     return NextResponse.json({ received: true });
   } catch {
     console.error("stripe_webhook_reconciliation_failed", event.id, event.type);

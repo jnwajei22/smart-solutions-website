@@ -25,6 +25,16 @@ export function InvoiceDocument({
       </div>
       <h1>{i.number}</h1>
       <h2>{i.title}</h2>
+      {i.status === "void" && (
+        <p className="alert">
+          Cancelled Invoice · No Payment Due. {i.cancellation_reason}
+        </p>
+      )}
+      {i.collection_paused_at && i.status !== "void" && (
+        <p className="alert">
+          Collection Paused · Cancellation and payments are under review.
+        </p>
+      )}
       <div className="request-meta">
         <span>
           Prepared for<strong>{job?.business_name || job?.name}</strong>
@@ -101,7 +111,13 @@ export function InvoiceDocument({
         </div>
         <div>
           <span>Balance remaining</span>
-          <strong>{money(i.total_cents - i.paid_cents)}</strong>
+          <strong>
+            {money(
+              i.status === "void"
+                ? 0
+                : Math.max(0, i.total_cents - i.paid_cents),
+            )}
+          </strong>
         </div>
       </div>
       <h2>Project terms</h2>

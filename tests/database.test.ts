@@ -326,5 +326,205 @@ test("database authorization and payment lifecycle", async (t) => {
       false,
     );
   });
+  await t.test(
+    "cancellation blocks collection, requires settled checkouts and zero retained funds",
+    async () => {
+      // Existing invoice retains funds after the prior partial refund.
+      await assert.rejects(
+        db.query("select public.begin_invoice_cancellation($1,$2,$3,false)", [
+          invoiceId,
+          alice,
+          "Client requested cancellation",
+        ]),
+      );
+      await db.query(
+        "select public.begin_invoice_cancellation($1,$2,$3,true)",
+        [invoiceId, admin, "Client requested cancellation"],
+      );
+      await assert.rejects(
+        db.query("select * from public.reserve_checkout($1,$2,100,$3)", [
+          invoiceId,
+          alice,
+          "balance",
+        ]),
+      );
+      await assert.rejects(
+        db.query("select public.finish_invoice_cancellation($1)", [invoiceId]),
+      );
+      // Refund every retained test payment through the real reconciliation function.
+      const payments = await db.query<{
+        stripe_intent_id: string;
+        amount_cents: number;
+      }>(
+        "select stripe_intent_id,amount_cents from public.payments where invoice_id=$1",
+        [invoiceId],
+      );
+      for (const payment of payments.rows)
+        await db.query("select public.record_refund($1,$2,$3)", [
+          "cancel_refund_" + payment.stripe_intent_id,
+          payment.stripe_intent_id,
+          payment.amount_cents,
+        ]);
+      await db.query("select public.finish_invoice_cancellation($1)", [
+        invoiceId,
+      ]);
+      await db.query("select public.finish_invoice_cancellation($1)", [
+        invoiceId,
+      ]);
+      const inv = (
+        await db.query<{
+          status: string;
+          paid_cents: number;
+          cancellation_reason: string;
+        }>("select * from public.invoices where id=$1", [invoiceId])
+      ).rows[0];
+      assert.equal(inv.status, "void");
+      assert.equal(inv.paid_cents, 0);
+      assert.equal(inv.cancellation_reason, "Client requested cancellation");
+      assert.equal(
+        (
+          await db.query<{ status: string }>(
+            "select status from public.requests where id=$1",
+            [requestId],
+          )
+        ).rows[0].status,
+        "cancelled",
+      );
+      // Late/out-of-order refund webhooks must never reopen a void invoice.
+      await db.query("select public.record_refund($1,$2,$3)", [
+        "late_refund",
+        payments.rows[0].stripe_intent_id,
+        1,
+      ]);
+      assert.equal(
+        (
+          await db.query<{ status: string }>(
+            "select status from public.invoices where id=$1",
+            [invoiceId],
+          )
+        ).rows[0].status,
+        "void",
+      );
+    },
+  );
+  await t.test(
+    "replacement invoices retain history and pending checkout prevents void",
+    async () => {
+      await db.query("select public.set_project_status($1,'reviewing')", [
+        requestId,
+      ]);
+      const replacement = (
+        await db.query<{ id: string }>(
+          "select public.issue_quote($1,'Replacement',$2::jsonb,10000,0,'2026-12-01','Replacement scope and cancellation by written agreement.') as id",
+          [
+            requestId,
+            JSON.stringify([
+              { description: "Labor", quantity: 1, unit_cents: 10000 },
+            ]),
+          ],
+        )
+      ).rows[0].id;
+      assert.equal(
+        (
+          await db.query("select id from public.invoices where request_id=$1", [
+            requestId,
+          ])
+        ).rows.length,
+        2,
+      );
+      await assert.rejects(
+        db.query("select public.set_project_status($1,'cancelled')", [
+          requestId,
+        ]),
+      );
+      await db.query(
+        "update public.invoices set accepted_at=now() where id=$1",
+        [replacement],
+      );
+      await db.query(
+        "select * from public.reserve_checkout($1,$2,10000,'balance')",
+        [replacement, alice],
+      );
+      await db.query(
+        "select public.begin_invoice_cancellation($1,$2,'Scope correction',false)",
+        [replacement, admin],
+      );
+      await assert.rejects(
+        db.query("select public.finish_invoice_cancellation($1)", [
+          replacement,
+        ]),
+      );
+      await assert.rejects(
+        db.query(
+          "select * from public.reserve_checkout($1,$2,10000,'balance')",
+          [replacement, alice],
+        ),
+      );
+    },
+  );
+  await t.test(
+    "outbox is transactional, private, deduplicated and leased",
+    async () => {
+      const requestNotifications = await db.query(
+        "select id from public.notification_outbox where request_id=$1 and kind='request_received'",
+        [requestId],
+      );
+      assert.equal(requestNotifications.rows.length, 2);
+      assert.equal(
+        (
+          await db.query(
+            "select id from public.notification_outbox where request_id=$1 and kind='invoice_void'",
+            [requestId],
+          )
+        ).rows.length,
+        1,
+      );
+      await db.exec("set role authenticated");
+      await assert.rejects(db.exec("select * from public.notification_outbox"));
+      await assert.rejects(
+        db.exec("select * from public.claim_notifications(2)"),
+      );
+      await db.exec("reset role");
+      const first = await db.query<{ id: string; claim_token: string }>(
+        "select * from public.claim_notifications(2)",
+      );
+      const second = await db.query<{ id: string }>(
+        "select * from public.claim_notifications(2)",
+      );
+      assert.equal(first.rows.length, 2);
+      assert.equal(second.rows.length, 2);
+      assert.ok(
+        !second.rows.some((row) => first.rows.some((x) => x.id === row.id)),
+      );
+      await db.query(
+        "update public.notification_outbox set claimed_until=now()-interval '1 minute',attempts=8 where id=$1",
+        [first.rows[0].id],
+      );
+      await db.exec("select * from public.claim_notifications(1)");
+      assert.equal(
+        (
+          await db.query<{ status: string }>(
+            "select status from public.notification_outbox where id=$1",
+            [first.rows[0].id],
+          )
+        ).rows[0].status,
+        "failed",
+      );
+      const before = (
+        await db.query("select id from public.notification_outbox")
+      ).rows.length;
+      await db.exec("begin");
+      await db.query(
+        "insert into public.messages(request_id,author_id,body) values($1,$2,'Rolled back message')",
+        [requestId, alice],
+      );
+      await db.exec("rollback");
+      assert.equal(
+        (await db.query("select id from public.notification_outbox")).rows
+          .length,
+        before,
+      );
+    },
+  );
   await db.close();
 });

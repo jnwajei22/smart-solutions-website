@@ -103,7 +103,8 @@ export function Portal({
     ["payments", "Payment history", CreditCard],
   ] as const;
   function invoiceCard(i: Invoice) {
-    const remaining = Math.max(0, i.total_cents - i.paid_cents),
+    const remaining =
+        i.status === "void" ? 0 : Math.max(0, i.total_cents - i.paid_cents),
       deposit = Math.max(0, i.deposit_cents - i.paid_cents);
     return (
       <article key={i.id} className="invoice-card">
@@ -124,6 +125,18 @@ export function Portal({
                     : "Payment due"}
           </span>
         </div>
+        {i.collection_paused_at && i.status !== "void" && (
+          <p className="alert">
+            Collection is paused while cancellation and any payments are
+            reviewed. Do not make another payment.
+          </p>
+        )}
+        {i.status === "void" && (
+          <p className="fine-print">
+            This invoice is cancelled. No payment is due.{" "}
+            {i.cancellation_reason}
+          </p>
+        )}
         <div className="invoice-lines">
           {i.items.map((item, n) => (
             <div key={n}>
@@ -158,6 +171,7 @@ export function Portal({
         </p>
         <div className="actions">
           {i.status === "issued" &&
+            !i.collection_paused_at &&
             (!i.accepted_at ? (
               <button
                 disabled={busy === i.id || demo}
