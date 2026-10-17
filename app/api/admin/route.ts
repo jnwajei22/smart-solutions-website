@@ -4,18 +4,19 @@ import { NextResponse } from "next/server";
 import {
   adminClient,
   currentUser,
-  isAdmin,
+  businessRole,
   configured,
 } from "../../../lib/supabase";
 import { bodyJSON, fail, sameOrigin } from "../../../lib/http";
 import { calculateTotal } from "../../../lib/billing";
 import { validPreferredDate } from "../../../lib/presentation";
+import { canManageProjects } from "../../../lib/access";
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return fail("Request origin not allowed.", 403);
   if (!configured()) return fail("Account services are not configured.", 503);
   const user = await currentUser();
-  if (!user || !(await isAdmin(user.id)))
-    return fail("Administrator access required.", 403);
+  if (!user || !canManageProjects(await businessRole(user)))
+    return fail("Project management access required.", 403);
   try {
     const b = await bodyJSON(request);
     const db = adminClient();
@@ -28,25 +29,30 @@ export async function POST(request: Request) {
     if (b.action === "cancel_invoice") {
       if (
         typeof b.invoice_id !== "string" ||
-        typeof b.reason !== "string" ||
-        b.reason.trim().length < 3 ||
-        b.reason.length > 500 ||
-        typeof b.cancel_project !== "boolean"
+        "reason" in b ||
+        "cancel_project" in b
       )
-        return fail("Add a cancellation reason between 3 and 500 characters.");
+        return fail(
+          "Only the client can enter or change a cancellation reason.",
+        );
       const { data: invoice, error } = await db
         .from("invoices")
-        .select("id")
+        .select("id,client_cancellation_reason")
         .eq("id", b.invoice_id)
         .eq("request_id", job.id)
         .single();
       if (error || !invoice) return fail("Invoice not found.", 404);
+      if (!invoice.client_cancellation_reason)
+        return fail(
+          "The client must request cancellation in their portal first.",
+          409,
+        );
       try {
         await cancelInvoice(
           invoice.id,
           user.id,
-          b.reason.trim(),
-          b.cancel_project,
+          invoice.client_cancellation_reason,
+          true,
         );
       } catch (error) {
         return fail(

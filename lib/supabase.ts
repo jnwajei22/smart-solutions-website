@@ -2,6 +2,8 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import type { User } from "@supabase/supabase-js";
+import type { BusinessRole } from "./access";
 export const configured = () =>
   Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -51,4 +53,16 @@ export async function isAdmin(id: string) {
     .eq("id", id)
     .single();
   return !error && data?.role === "admin";
+}
+/** Read current database permissions on every request; never trust user metadata. */
+export async function businessRole(user: User): Promise<BusinessRole | null> {
+  if (!user.email_confirmed_at || !user.email) return null;
+  if (await isAdmin(user.id)) return "admin";
+  const { data, error } = await adminClient()
+    .from("business_access")
+    .select("role")
+    .eq("email", user.email.toLowerCase())
+    .maybeSingle();
+  if (error || !["manager", "viewer"].includes(data?.role)) return null;
+  return data!.role as BusinessRole;
 }

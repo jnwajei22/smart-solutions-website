@@ -8,19 +8,22 @@ const alice = "00000000-0000-0000-0000-000000000001",
 test("database authorization and payment lifecycle", async (t) => {
   const db = new PGlite();
   await db.exec(
-    `create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid;$$;grant usage on schema public,auth to anon,authenticated,service_role;grant execute on function auth.uid() to authenticated,service_role;`,
+    `create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz default now());create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid;$$;grant usage on schema public,auth to anon,authenticated,service_role;grant execute on function auth.uid() to authenticated,service_role;`,
   );
   await db.exec(
     await readFile(new URL("../supabase/schema.sql", import.meta.url), "utf8"),
   );
-  await db.query("insert into auth.users values($1,$2),($3,$4),($5,$6)", [
-    alice,
-    "alice@example.invalid",
-    bob,
-    "bob@example.invalid",
-    admin,
-    "admin@example.invalid",
-  ]);
+  await db.query(
+    "insert into auth.users(id,email) values($1,$2),($3,$4),($5,$6)",
+    [
+      alice,
+      "alice@example.invalid",
+      bob,
+      "bob@example.invalid",
+      admin,
+      "admin@example.invalid",
+    ],
+  );
   await db.query("update public.profiles set role='admin' where id=$1", [
     admin,
   ]);
@@ -337,6 +340,11 @@ test("database authorization and payment lifecycle", async (t) => {
           "Client requested cancellation",
         ]),
       );
+      await db.query("select public.request_invoice_cancellation($1,$2,$3)", [
+        invoiceId,
+        alice,
+        "Client requested cancellation",
+      ]);
       await db.query(
         "select public.begin_invoice_cancellation($1,$2,$3,true)",
         [invoiceId, admin, "Client requested cancellation"],
@@ -445,6 +453,11 @@ test("database authorization and payment lifecycle", async (t) => {
         "select * from public.reserve_checkout($1,$2,10000,'balance')",
         [replacement, alice],
       );
+      await db.query("select public.request_invoice_cancellation($1,$2,$3)", [
+        replacement,
+        alice,
+        "Client requested scope cancellation",
+      ]);
       await db.query(
         "select public.begin_invoice_cancellation($1,$2,'Scope correction',false)",
         [replacement, admin],
@@ -523,6 +536,280 @@ test("database authorization and payment lifecycle", async (t) => {
         (await db.query("select id from public.notification_outbox")).rows
           .length,
         before,
+      );
+    },
+  );
+  await t.test(
+    "team permissions require exact verified email, revoke immediately, and never permit direct writes",
+    async () => {
+      const before = (
+        await db.query<{
+          n: number;
+          role: string;
+          id: string;
+          client_cancellation_reason: string;
+          cancellation_reason: string;
+          collection_paused_at: string;
+          cancel_project_requested: boolean;
+        }>("select count(*)::int as n from public.requests")
+      ).rows[0];
+      await db.query<{
+        n: number;
+        role: string;
+        id: string;
+        client_cancellation_reason: string;
+        cancellation_reason: string;
+        collection_paused_at: string;
+        cancel_project_requested: boolean;
+      }>(
+        "insert into public.business_access(email,role,granted_by) values('bob@example.invalid','viewer',$1)",
+        [admin],
+      );
+      await db.exec(
+        `set role authenticated;select set_config('request.jwt.claim.sub','${bob}',false);`,
+      );
+      assert.deepEqual(
+        (
+          await db.query<{
+            n: number;
+            role: string;
+            id: string;
+            client_cancellation_reason: string;
+            cancellation_reason: string;
+            collection_paused_at: string;
+            cancel_project_requested: boolean;
+          }>("select count(*)::int as n from public.requests")
+        ).rows[0],
+        before,
+      );
+      assert.equal(
+        (
+          await db.query<{
+            n: number;
+            role: string;
+            id: string;
+            client_cancellation_reason: string;
+            cancellation_reason: string;
+            collection_paused_at: string;
+            cancel_project_requested: boolean;
+          }>("select private.current_business_role() as role")
+        ).rows[0].role,
+        "viewer",
+      );
+      await assert.rejects(db.exec("select * from public.business_access"));
+      await assert.rejects(
+        db.exec("update public.requests set status='completed'"),
+      );
+      await assert.rejects(
+        db.exec("select private.business_role_for('" + admin + "')"),
+      );
+      await assert.rejects(
+        db.query<{
+          n: number;
+          role: string;
+          id: string;
+          client_cancellation_reason: string;
+          cancellation_reason: string;
+          collection_paused_at: string;
+          cancel_project_requested: boolean;
+        }>(
+          "select public.request_invoice_cancellation($1,$2,'Forged reason')",
+          [invoiceId, alice],
+        ),
+      );
+      await db.exec("reset role");
+      await assert.rejects(
+        db.query<{
+          n: number;
+          role: string;
+          id: string;
+          client_cancellation_reason: string;
+          cancellation_reason: string;
+          collection_paused_at: string;
+          cancel_project_requested: boolean;
+        }>(
+          "select public.begin_invoice_cancellation($1,$2,'Forged reason',true)",
+          [invoiceId, bob],
+        ),
+      );
+      await db.query<{
+        n: number;
+        role: string;
+        id: string;
+        client_cancellation_reason: string;
+        cancellation_reason: string;
+        collection_paused_at: string;
+        cancel_project_requested: boolean;
+      }>("update auth.users set email_confirmed_at=null where id=$1", [bob]);
+      await db.exec(
+        `set role authenticated;select set_config('request.jwt.claim.sub','${bob}',false);`,
+      );
+      assert.equal(
+        (
+          await db.query<{
+            n: number;
+            role: string;
+            id: string;
+            client_cancellation_reason: string;
+            cancellation_reason: string;
+            collection_paused_at: string;
+            cancel_project_requested: boolean;
+          }>("select count(*)::int as n from public.requests")
+        ).rows[0].n,
+        1,
+      );
+      await db.exec("reset role");
+      await db.query<{
+        n: number;
+        role: string;
+        id: string;
+        client_cancellation_reason: string;
+        cancellation_reason: string;
+        collection_paused_at: string;
+        cancel_project_requested: boolean;
+      }>("update auth.users set email_confirmed_at=now() where id=$1", [bob]);
+      await db.query<{
+        n: number;
+        role: string;
+        id: string;
+        client_cancellation_reason: string;
+        cancellation_reason: string;
+        collection_paused_at: string;
+        cancel_project_requested: boolean;
+      }>(
+        "update public.business_access set role='manager' where email='bob@example.invalid'",
+      );
+      assert.equal(
+        (
+          await db.query<{
+            n: number;
+            role: string;
+            id: string;
+            client_cancellation_reason: string;
+            cancellation_reason: string;
+            collection_paused_at: string;
+            cancel_project_requested: boolean;
+          }>("select private.business_role_for($1) as role", [bob])
+        ).rows[0].role,
+        "manager",
+      );
+      await db.query<{
+        n: number;
+        role: string;
+        id: string;
+        client_cancellation_reason: string;
+        cancellation_reason: string;
+        collection_paused_at: string;
+        cancel_project_requested: boolean;
+      }>(
+        "delete from public.business_access where email='bob@example.invalid'",
+      );
+      await db.exec(
+        `set role authenticated;select set_config('request.jwt.claim.sub','${bob}',false);`,
+      );
+      assert.equal(
+        (
+          await db.query<{
+            n: number;
+            role: string;
+            id: string;
+            client_cancellation_reason: string;
+            cancellation_reason: string;
+            collection_paused_at: string;
+            cancel_project_requested: boolean;
+          }>("select count(*)::int as n from public.requests")
+        ).rows[0].n,
+        1,
+      );
+      await db.exec("reset role");
+    },
+  );
+  await t.test(
+    "only the associated client can request or edit cancellation, and staff cannot replace their reason",
+    async () => {
+      const inv = (
+        await db.query<{
+          n: number;
+          role: string;
+          id: string;
+          client_cancellation_reason: string;
+          cancellation_reason: string;
+          collection_paused_at: string;
+          cancel_project_requested: boolean;
+        }>(
+          "select id from public.invoices where request_id=$1 and status<>'void'",
+          [requestId],
+        )
+      ).rows[0].id;
+      await assert.rejects(
+        db.query<{
+          n: number;
+          role: string;
+          id: string;
+          client_cancellation_reason: string;
+          cancellation_reason: string;
+          collection_paused_at: string;
+          cancel_project_requested: boolean;
+        }>(
+          "select public.request_invoice_cancellation($1,$2,'Not my invoice')",
+          [inv, bob],
+        ),
+      );
+      await db.query<{
+        n: number;
+        role: string;
+        id: string;
+        client_cancellation_reason: string;
+        cancellation_reason: string;
+        collection_paused_at: string;
+        cancel_project_requested: boolean;
+      }>(
+        "select public.request_invoice_cancellation($1,$2,'My updated client reason')",
+        [inv, alice],
+      );
+      await db.query<{
+        n: number;
+        role: string;
+        id: string;
+        client_cancellation_reason: string;
+        cancellation_reason: string;
+        collection_paused_at: string;
+        cancel_project_requested: boolean;
+      }>(
+        "select public.begin_invoice_cancellation($1,$2,'Business cannot overwrite',false)",
+        [inv, admin],
+      );
+      const row = (
+        await db.query<{
+          n: number;
+          role: string;
+          id: string;
+          client_cancellation_reason: string;
+          cancellation_reason: string;
+          collection_paused_at: string;
+          cancel_project_requested: boolean;
+        }>(
+          "select client_cancellation_reason,cancellation_reason,collection_paused_at,cancel_project_requested from public.invoices where id=$1",
+          [inv],
+        )
+      ).rows[0];
+      assert.equal(row.client_cancellation_reason, "My updated client reason");
+      assert.equal(row.cancellation_reason, "My updated client reason");
+      assert.ok(row.collection_paused_at);
+      assert.equal(row.cancel_project_requested, true);
+      await assert.rejects(
+        db.query<{
+          n: number;
+          role: string;
+          id: string;
+          client_cancellation_reason: string;
+          cancellation_reason: string;
+          collection_paused_at: string;
+          cancel_project_requested: boolean;
+        }>(
+          "select public.request_invoice_cancellation($1,$2,'Too late to edit')",
+          [invoiceId, alice],
+        ),
       );
     },
   );

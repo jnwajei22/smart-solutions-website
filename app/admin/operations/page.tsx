@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { currentUser, isAdmin } from "../../../lib/supabase";
+import { currentUser, businessRole } from "../../../lib/supabase";
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Operating guide",
@@ -9,7 +9,7 @@ export const metadata = {
 export default async function Operations() {
   const user = await currentUser();
   if (!user) redirect("/login");
-  if (!(await isAdmin(user.id))) redirect("/portal");
+  if (!(await businessRole(user))) redirect("/portal");
   return (
     <main className="container narrow section legal">
       <Link className="text-link" href="/admin">

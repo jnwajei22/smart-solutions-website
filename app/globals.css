@@ -2533,3 +2533,324 @@ td {
     table-layout: auto;
   }
 }
+
+/* Shared project conversation: readable sequence, compact composer, bounded history. */
+.project-messages {
+  margin: 28px 0;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+.project-messages h3 {
+  margin: 0 0 16px;
+  font-size: 17px;
+}
+.conversation-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 420px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 8px 12px 2px;
+  scrollbar-gutter: stable;
+}
+.message-bubble {
+  width: fit-content;
+  max-width: 90%;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px 12px 12px 3px;
+  background: var(--cream);
+  flex-shrink: 0;
+}
+.message-bubble.outgoing {
+  align-self: flex-end;
+  border-radius: 12px 12px 3px 12px;
+  background: var(--pale);
+}
+.message-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.message-meta strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.message-meta time {
+  font-size: 10px;
+}
+.message-bubble p {
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 8px 0 0;
+}
+.conversation-empty {
+  margin: 8px 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.project-messages form {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+.project-messages form > label {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.project-messages textarea {
+  margin: 0;
+  min-height: 100px;
+}
+.project-messages form > .button {
+  justify-self: start;
+}
+.project-messages form > .text-link {
+  margin-left: 0;
+  justify-self: start;
+}
+.workspace-role {
+  color: var(--muted);
+  font-size: 12px;
+  margin: -8px 0 24px;
+}
+.admin-detail > label {
+  padding: 4px 0 12px;
+}
+.admin-detail > h3 {
+  margin: 26px 0 16px;
+  font-size: 19px;
+}
+.admin-invoice {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 10px;
+}
+.admin-invoice p {
+  margin: 8px 0 0;
+  line-height: 1.65;
+}
+.admin-invoice > .text-link {
+  justify-self: start;
+}
+.cancellation-summary {
+  padding: 16px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.cancellation-summary > strong {
+  font-size: 12px;
+}
+.cancellation-summary p {
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 8px 0;
+}
+.cancellation-summary small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.cancellation-actions {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+.client-cancellation {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.client-cancellation > .text-link {
+  justify-self: start;
+}
+.cancellation-form {
+  display: grid;
+  gap: 12px;
+}
+.cancellation-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+}
+.workspace-settings {
+  max-width: 1080px;
+  padding-top: 48px;
+  padding-bottom: 72px;
+}
+.settings-heading {
+  margin: 32px 0;
+}
+.settings-heading h1 {
+  font-size: clamp(32px, 5vw, 48px);
+  line-height: 1.15;
+  margin: 10px 0 14px;
+}
+.settings-heading > p {
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0;
+}
+.settings-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 24px;
+  min-width: 0;
+}
+.settings-card h2 {
+  font-size: 20px;
+  margin: 0 0 18px;
+}
+.settings-card p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin: 0 0 18px;
+}
+.settings-card p:last-child {
+  margin-bottom: 0;
+}
+.settings-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.settings-card-heading h2 {
+  margin: 0;
+}
+.delivery-badge {
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+}
+.delivery-badge.enabled {
+  background: var(--pale);
+}
+.notification-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin: 24px 0;
+}
+.notification-metrics > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+}
+.notification-metrics dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.notification-metrics dd {
+  font-size: 30px;
+  font-weight: 600;
+  margin: 10px 0 0;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+}
+.coverage-list,
+.team-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.coverage-list {
+  display: grid;
+  gap: 22px;
+}
+.coverage-list li {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.coverage-list span {
+  color: var(--muted);
+}
+.team-access-form {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr auto;
+  align-items: end;
+  gap: 16px;
+  margin: 24px 0 14px;
+}
+.team-access-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.team-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.team-list li > div {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  font-size: 13px;
+}
+.team-list span {
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .message-bubble {
+    max-width: 96%;
+    padding: 12px;
+  }
+  .conversation-thread {
+    max-height: 360px;
+  }
+  .settings-card {
+    padding: 20px;
+  }
+  .settings-grid,
+  .team-access-form {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .notification-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .notification-metrics > div {
+    padding: 14px;
+  }
+  .workspace-settings {
+    padding-top: 28px;
+  }
+}

@@ -5,6 +5,8 @@ import { statusLabel } from "../lib/presentation";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2, ArrowUpRight, Save } from "lucide-react";
+import { Conversation } from "./conversation";
+import { canManageProjects, roleLabel } from "../lib/access";
 import { Brand } from "./brand";
 import {
   money,
@@ -33,8 +35,8 @@ export function AdminDashboard({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [notice, setNotice] = useState("");
-  const [cancellationReason, setCancellationReason] = useState("");
-  const [cancelProject, setCancelProject] = useState(false);
+  const role = data.businessRole || (demo ? "admin" : "viewer");
+  const canEdit = canManageProjects(role);
   const [selected, setSelected] = useState(data.jobs[0]?.id || ""),
     [items, setItems] = useState<LineItem[]>([
       { description: "", quantity: 1, unit_cents: 0 },
@@ -61,7 +63,11 @@ export function AdminDashboard({
         (filter === "approval" && a.awaitingApproval) ||
         (filter === "schedule" && a.readyToSchedule)),
   );
-  async function send(body: object) {
+  async function send(body: { action: string; [key: string]: unknown }) {
+    if (!canEdit) {
+      setError("This dashboard is read only.");
+      return;
+    }
     if (demo) {
       setError("Sample workspace: changes are not saved.");
       return;
@@ -77,7 +83,7 @@ export function AdminDashboard({
       const d = await r.json();
       if (!r.ok) throw Error(d.error);
       setNotice("Saved. Your workspace is updating.");
-      setMessage("");
+      if (body.action === "message") setMessage("");
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to save.");
@@ -95,6 +101,11 @@ export function AdminDashboard({
           <Link href="/admin/notifications" className="text-link">
             Email Notifications
           </Link>
+          {role === "admin" && (
+            <Link href="/admin/team" className="text-link">
+              Team Access
+            </Link>
+          )}
           <Link href="/portal" className="text-link">
             Client view <ArrowUpRight size={16} />
           </Link>
@@ -108,6 +119,10 @@ export function AdminDashboard({
             <p>Your incoming requests, project scopes, and payment overview.</p>
           </div>
         </div>
+        <p className="workspace-role">
+          {roleLabel(role)}
+          {!canEdit && " · Read-only access"}
+        </p>
         {demo && (
           <p className="alert">
             Sample business workspace · Fictional data. Changes are not saved.
@@ -233,6 +248,7 @@ export function AdminDashboard({
             {visible.length ? (
               visible.map(({ job: j, needsReply }) => (
                 <button
+                  disabled={busy}
                   className={`admin-job ${selected === j.id ? "selected" : ""}`}
                   key={j.id}
                   onClick={() => {
@@ -247,8 +263,6 @@ export function AdminDashboard({
                     };
                     const next = drafts.current[j.id];
                     setSelected(j.id);
-                    setCancellationReason("");
-                    setCancelProject(false);
                     setItems(
                       next?.items || [
                         { description: "", quantity: 1, unit_cents: 0 },
@@ -316,51 +330,48 @@ export function AdminDashboard({
                   {job.property_type}
                 </p>
                 <div className="project-messages">
-                  <h3>Project conversation</h3>
-                  {data.messages
-                    .filter((m) => m.request_id === job.id)
-                    .map((m) => (
-                      <div className="message-bubble" key={m.id}>
-                        <small>
-                          {m.author_id === job.customer_id
-                            ? "Client"
-                            : "DFW Smart Solutions"}{" "}
-                          · {date(m.created_at)}
-                        </small>
-                        <p>{m.body}</p>
-                      </div>
-                    ))}
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      send({
-                        action: "message",
-                        request_id: job.id,
-                        body: message,
-                      });
-                    }}
-                  >
-                    <label>
-                      Reply to Client
-                      <textarea
-                        required
-                        minLength={3}
-                        maxLength={2000}
-                        rows={3}
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                      />
-                    </label>
-                    <button className="button small" disabled={busy}>
-                      Send reply
-                    </button>
-                  </form>
+                  <h3>Project Conversation</h3>
+                  <Conversation
+                    key={job.id}
+                    messages={data.messages.filter(
+                      (m) => m.request_id === job.id,
+                    )}
+                    customerId={job.customer_id}
+                    business
+                  />
+                  {canEdit && (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        send({
+                          action: "message",
+                          request_id: job.id,
+                          body: message,
+                        });
+                      }}
+                    >
+                      <label>
+                        Reply to Client
+                        <textarea
+                          required
+                          minLength={3}
+                          maxLength={2000}
+                          rows={3}
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                        />
+                      </label>
+                      <button className="button small" disabled={busy}>
+                        Send Reply
+                      </button>
+                    </form>
+                  )}
                 </div>
                 <label>
                   Project Status
                   <select
                     value={job.status}
-                    disabled={busy}
+                    disabled={busy || !canEdit}
                     onChange={(e) =>
                       send({
                         action: "status",
@@ -401,7 +412,8 @@ export function AdminDashboard({
                 {!data.invoices.some(
                   (i) => i.request_id === job.id && i.status !== "void",
                 ) &&
-                  job.status !== "cancelled" && (
+                  job.status !== "cancelled" &&
+                  canEdit && (
                     <button
                       className="text-link"
                       disabled={busy}
@@ -420,7 +432,7 @@ export function AdminDashboard({
                   (i) => i.request_id === job.id && i.status !== "void",
                 ) ? (
                   <>
-                    <h3>Issued quote</h3>
+                    <h3>Issued Quote</h3>
                     {data.invoices
                       .filter(
                         (i) => i.request_id === job.id && i.status !== "void",
@@ -443,57 +455,44 @@ export function AdminDashboard({
                               payments/refunds, then retry cancellation.
                             </p>
                           )}
-                          {i.cancellation_reason && (
-                            <p>{i.cancellation_reason}</p>
-                          )}
-                          {i.status !== "void" && (
-                            <form
-                              onSubmit={(e) => {
-                                e.preventDefault();
-                                send({
-                                  action: "cancel_invoice",
-                                  request_id: job.id,
-                                  invoice_id: i.id,
-                                  reason: cancellationReason,
-                                  cancel_project: cancelProject,
-                                });
-                              }}
-                            >
-                              <label>
-                                Cancellation Reason
-                                <textarea
-                                  required
-                                  minLength={3}
-                                  maxLength={500}
-                                  value={cancellationReason}
-                                  onChange={(e) =>
-                                    setCancellationReason(e.target.value)
-                                  }
-                                />
-                              </label>
-                              <label>
-                                <input
-                                  type="checkbox"
-                                  checked={cancelProject}
-                                  onChange={(e) =>
-                                    setCancelProject(e.target.checked)
-                                  }
-                                />{" "}
-                                Also Cancel Project
-                              </label>
+                          <div className="cancellation-summary">
+                            <strong>Client Cancellation Reason</strong>
+                            <p>
+                              {i.client_cancellation_reason ||
+                                "No cancellation requested by the client."}
+                            </p>
+                            {i.client_cancellation_requested_at && (
+                              <small>
+                                Requested{" "}
+                                {date(i.client_cancellation_requested_at)} ·
+                                Only the client can edit this reason.
+                              </small>
+                            )}
+                          </div>
+                          {canEdit && i.client_cancellation_reason && (
+                            <div className="cancellation-actions">
                               <p className="fine-print">
-                                Pauses collection and closes open checkouts.
-                                Voids only when no retained payment or
-                                unresolved checkout remains. Refunds must be
-                                issued separately in Stripe. This action cannot
-                                undo a completed void.
+                                Close open checkouts and complete cancellation
+                                once any required refunds have cleared. This
+                                does not issue a refund.
                               </p>
-                              <button className="button small" disabled={busy}>
-                                {i.collection_paused_at
-                                  ? "Retry Cancellation"
-                                  : "Cancel Invoice"}
+                              <button
+                                type="button"
+                                className="button small outline"
+                                disabled={busy}
+                                onClick={() =>
+                                  send({
+                                    action: "cancel_invoice",
+                                    request_id: job.id,
+                                    invoice_id: i.id,
+                                  })
+                                }
+                              >
+                                {busy
+                                  ? "Processing…"
+                                  : "Complete Client Cancellation"}
                               </button>
-                            </form>
+                            </div>
                           )}
                           <Link
                             href={`/invoices/${i.id}`}
@@ -508,7 +507,7 @@ export function AdminDashboard({
                       before issuing a quote.
                     </p>
                   </>
-                ) : (
+                ) : canEdit ? (
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -680,6 +679,10 @@ export function AdminDashboard({
                       {busy ? "Issuing…" : "Issue quote & invoice"}
                     </button>
                   </form>
+                ) : (
+                  <p className="empty-inline">
+                    No quote issued yet. A project manager can prepare one.
+                  </p>
                 )}
               </>
             ) : (

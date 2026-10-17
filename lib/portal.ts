@@ -1,12 +1,12 @@
 import "server-only";
 import { redirect } from "next/navigation";
-import { currentUser, serverClient, isAdmin } from "./supabase";
+import { currentUser, serverClient, businessRole } from "./supabase";
 import { accountName } from "./presentation";
 import type { PortalData } from "./catalog";
 export async function loadPortal(admin = false): Promise<PortalData> {
   const user = await currentUser();
   if (!user) redirect(`/login?next=${admin ? "/admin" : "/portal"}`);
-  const role = await isAdmin(user.id);
+  const role = await businessRole(user);
   if (admin && !role) redirect("/portal");
   const db = await serverClient();
   const messagesQuery = db
@@ -51,6 +51,7 @@ export async function loadPortal(admin = false): Promise<PortalData> {
       jobs.data?.find((job) => job.customer_id === user.id)?.name,
     ),
     email: user.email || "",
-    admin: role,
+    admin: !!role,
+    businessRole: role,
   };
 }

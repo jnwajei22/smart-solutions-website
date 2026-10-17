@@ -345,7 +345,10 @@ test("admin mutations require an admin, trusted origin and matching project invo
             table === "requests"
               ? { id: "request", customer_id: "customer" }
               : invoiceMatches
-                ? { id: "invoice" }
+                ? {
+                    id: "invoice",
+                    client_cancellation_reason: "Client requested cancellation",
+                  }
                 : null,
           error: null,
         };
@@ -365,7 +368,7 @@ test("admin mutations require an admin, trusted origin and matching project invo
     "../../../lib/supabase": {
       adminClient: () => db,
       currentUser: async () => (signedIn ? { id: "admin" } : null),
-      isAdmin: async () => admin,
+      businessRole: async () => (admin ? "admin" : "viewer"),
       configured: () => true,
     },
     "../../../lib/cancellation": {
@@ -380,6 +383,7 @@ test("admin mutations require an admin, trusted origin and matching project invo
       fail: (error: string, status = 400) =>
         Response.json({ error }, { status }),
     },
+    "../../../lib/access": await import("../lib/access.ts"),
     "../../../lib/billing": await import("../lib/billing.ts"),
     "../../../lib/presentation": await import("../lib/presentation.ts"),
   });
@@ -395,8 +399,6 @@ test("admin mutations require an admin, trusted origin and matching project invo
     action: "cancel_invoice",
     request_id: "request",
     invoice_id: "invoice",
-    reason: "Client requested cancellation",
-    cancel_project: true,
   };
   assert.equal((await run(cancellation)).status, 403);
   signedIn = false;
@@ -410,7 +412,10 @@ test("admin mutations require an admin, trusted origin and matching project invo
   assert.equal((await run(cancellation)).status, 404);
   assert.equal(cancellations, 0);
   invoiceMatches = true;
-  assert.equal((await run({ ...cancellation, reason: "" })).status, 400);
+  assert.equal(
+    (await run({ ...cancellation, reason: "Business overwrite" })).status,
+    400,
+  );
   assert.equal(cancellations, 0);
   assert.equal((await run(cancellation)).status, 200);
   assert.equal(cancellations, 1);
@@ -427,4 +432,129 @@ test("admin mutations require an admin, trusted origin and matching project invo
   assert.equal(quotes, 0);
   assert.equal((await run({ ...quote, due_date: "2026-12-01" })).status, 201);
   assert.equal(quotes, 1);
+});
+
+test("team changes require owner access and never accept elevated roles", async () => {
+  let origin = true;
+  let owner = false;
+  const writes: unknown[] = [];
+  const { POST } = await load("app/api/team/route.ts", {
+    "next/server": {
+      NextResponse: {
+        json: (v: unknown, i?: ResponseInit) => Response.json(v, i),
+      },
+    },
+    "../../../lib/supabase": {
+      configured: () => true,
+      currentUser: async () => ({
+        id: "owner",
+        email: "owner@example.invalid",
+        email_confirmed_at: "verified",
+      }),
+      isAdmin: async () => owner,
+      adminClient: () => ({
+        from: () => ({
+          upsert: async (v: unknown) => {
+            writes.push(v);
+            return { error: null };
+          },
+          delete: () => ({
+            eq: async () => {
+              writes.push("revoke");
+              return { error: null };
+            },
+          }),
+        }),
+      }),
+    },
+    "../../../lib/http": {
+      sameOrigin: () => origin,
+      bodyJSON: (r: Request) => r.json(),
+      fail: (error: string, status = 400) =>
+        Response.json({ error }, { status }),
+    },
+  });
+  const run = (body: unknown) =>
+    POST(
+      new Request("https://example.invalid/api/team", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    );
+  const body = {
+    action: "grant",
+    email: " Partner@Example.invalid ",
+    role: "viewer",
+  };
+  assert.equal((await run(body)).status, 403);
+  owner = true;
+  origin = false;
+  assert.equal((await run(body)).status, 403);
+  origin = true;
+  assert.equal((await run({ ...body, role: "admin" })).status, 400);
+  assert.equal(
+    (await run({ ...body, email: "owner@example.invalid" })).status,
+    400,
+  );
+  assert.equal(writes.length, 0);
+  assert.equal((await run(body)).status, 200);
+  assert.equal(
+    (writes[0] as { email: string }).email,
+    "partner@example.invalid",
+  );
+  assert.equal((await run({ ...body, action: "revoke" })).status, 200);
+});
+
+test("client cancellation uses authenticated identity and validates reason before database calls", async () => {
+  let origin = true;
+  let verified = false;
+  let args: Record<string, unknown> | undefined;
+  const { POST } = await load("app/api/cancellations/route.ts", {
+    "next/server": {
+      NextResponse: {
+        json: (v: unknown, i?: ResponseInit) => Response.json(v, i),
+      },
+    },
+    "../../../lib/supabase": {
+      configured: () => true,
+      currentUser: async () => ({
+        id: "actual-client",
+        email_confirmed_at: verified ? "verified" : null,
+      }),
+      adminClient: () => ({
+        rpc: async (_: string, v: Record<string, unknown>) => {
+          args = v;
+          return { error: null };
+        },
+      }),
+    },
+    "../../../lib/http": {
+      sameOrigin: () => origin,
+      bodyJSON: (r: Request) => r.json(),
+      fail: (error: string, status = 400) =>
+        Response.json({ error }, { status }),
+    },
+    "../../../lib/notifications": { scheduleNotifications: () => {} },
+  });
+  const run = (body: unknown) =>
+    POST(
+      new Request("https://example.invalid/api/cancellations", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    );
+  const body = {
+    invoice_id: "invoice",
+    customer_id: "forged-client",
+    reason: "Client cancellation reason",
+  };
+  assert.equal((await run(body)).status, 401);
+  verified = true;
+  origin = false;
+  assert.equal((await run(body)).status, 403);
+  origin = true;
+  assert.equal((await run({ ...body, reason: "" })).status, 400);
+  assert.equal(args, undefined);
+  assert.equal((await run(body)).status, 200);
+  assert.equal(args!.p_customer, "actual-client");
 });
