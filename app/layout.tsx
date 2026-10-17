@@ -1,11 +1,26 @@
 import type { Metadata } from "next";
 import "./globals.css";
-
 export const metadata: Metadata = {
-  title: "DFW Smart Solutions | Low-Voltage, Cabling & Smart Infrastructure",
-  description: "Structured cabling, network setup, Wi-Fi optimization, racks, and smart infrastructure services across Dallas–Fort Worth.",
+  title: {
+    default: "DFW Smart Solutions | Your space. Only smarter.",
+    template: "%s | DFW Smart Solutions",
+  },
+  description:
+    "Ethernet cabling, Wi-Fi, network organization, TV mounting, and smart-home setup for homes and small businesses across Dallas–Fort Worth.",
 };
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="en"><body>{children}</body></html>;
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
+        <div id="main-content">{children}</div>
+      </body>
+    </html>
+  );
 }
