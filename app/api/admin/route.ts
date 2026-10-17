@@ -1,3 +1,5 @@
+import { cancelInvoice } from "../../../lib/cancellation";
+import { scheduleNotifications } from "../../../lib/notifications";
 import { NextResponse } from "next/server";
 import {
   adminClient,
@@ -22,6 +24,43 @@ export async function POST(request: Request) {
       .eq("id", b.request_id)
       .single();
     if (error || !job) return fail("Request not found.", 404);
+    if (b.action === "cancel_invoice") {
+      if (
+        typeof b.invoice_id !== "string" ||
+        typeof b.reason !== "string" ||
+        b.reason.trim().length < 3 ||
+        b.reason.length > 500 ||
+        typeof b.cancel_project !== "boolean"
+      )
+        return fail("Add a cancellation reason between 3 and 500 characters.");
+      const { data: invoice, error } = await db
+        .from("invoices")
+        .select("id")
+        .eq("id", b.invoice_id)
+        .eq("request_id", job.id)
+        .single();
+      if (error || !invoice) return fail("Invoice not found.", 404);
+      try {
+        await cancelInvoice(
+          invoice.id,
+          user.id,
+          b.reason.trim(),
+          b.cancel_project,
+        );
+      } catch (error) {
+        return fail(
+          error instanceof Error &&
+            (error.message.startsWith("Collection is paused.") ||
+              error.message ===
+                "Unable to pause this invoice for cancellation.")
+            ? error.message
+            : "Cancellation requires review. Refresh the workspace before collecting payment.",
+          409,
+        );
+      }
+      scheduleNotifications();
+      return NextResponse.json({ saved: true });
+    }
     if (b.action === "message") {
       if (
         typeof b.body !== "string" ||
@@ -35,6 +74,7 @@ export async function POST(request: Request) {
         body: b.body.trim(),
       });
       if (error) throw error;
+      scheduleNotifications();
       return NextResponse.json({ saved: true });
     }
     if (b.action === "status") {
@@ -50,11 +90,16 @@ export async function POST(request: Request) {
         ].includes(b.status)
       )
         return fail("Invalid project status.");
-      const { error } = await db
-        .from("requests")
-        .update({ status: b.status })
-        .eq("id", job.id);
-      if (error) throw error;
+      const { error } = await db.rpc("set_project_status", {
+        p_request: job.id,
+        p_status: b.status,
+      });
+      if (error)
+        return fail(
+          "Unable to change status. Cancel or void the active invoice before cancelling the project.",
+          409,
+        );
+      scheduleNotifications();
       return NextResponse.json({ saved: true });
     }
     if (b.action !== "quote") return fail("Unknown action.");
@@ -99,6 +144,7 @@ export async function POST(request: Request) {
         "Unable to issue quote. This request may already have an invoice.",
         409,
       );
+    scheduleNotifications();
     return NextResponse.json({ id: data }, { status: 201 });
   } catch (e) {
     return fail(e instanceof Error ? e.message : "Unable to save this change.");

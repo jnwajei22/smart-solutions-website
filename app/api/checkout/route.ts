@@ -20,13 +20,15 @@ export async function POST(request: Request) {
       .eq("customer_id", user.id)
       .single();
     if (error || !invoice) return fail("Invoice not found.", 404);
-    if (invoice.status !== "issued")
+    if (invoice.status !== "issued" || invoice.collection_paused_at)
       return fail("This invoice is not open for payment.");
     if (b.kind === "accept") {
       const { error } = await db
         .from("invoices")
         .update({ accepted_at: new Date().toISOString() })
         .eq("id", invoice.id)
+        .eq("status", "issued")
+        .is("collection_paused_at", null)
         .is("accepted_at", null);
       if (error) throw error;
       return NextResponse.json({ accepted: true });
@@ -141,6 +143,33 @@ export async function POST(request: Request) {
       .update({ session_id: session.id })
       .eq("id", attempt.id);
     if (saveError) throw saveError;
+    const { data: currentInvoice, error: currentError } = await db
+      .from("invoices")
+      .select("status,collection_paused_at")
+      .eq("customer_id", user.id)
+      .eq("id", invoice.id)
+      .single();
+    if (currentError || !currentInvoice)
+      return fail(
+        "Checkout needs review. Refresh your portal before paying.",
+        409,
+      );
+    if (
+      currentInvoice.collection_paused_at ||
+      currentInvoice.status !== "issued"
+    ) {
+      try {
+        const closed = await stripe.checkout.sessions.expire(session.id);
+        if (closed.status === "expired")
+          await db
+            .from("payment_attempts")
+            .update({ completed: true })
+            .eq("id", attempt.id);
+      } catch {
+        /* Cancellation retry reconciles uncertain outcomes. */
+      }
+      return fail("Collection is paused. This checkout cannot be used.", 409);
+    }
     return NextResponse.json({ url: session.url });
   } catch (e) {
     return fail(

@@ -4,7 +4,7 @@ This guide covers the current customer platform on `feature/customer-platform`. 
 
 ## Daily workflow
 
-1. Open `/admin`, refresh, and check **Need Review** and **Need a Reply**. Requests/messages do not currently trigger outbound email alerts. Check the workspace routinely rather than relying on inbox notifications.
+1. Open `/admin`, refresh, and check **Need Review** and **Need a Reply**. Request/message notifications are queued transactionally; check `/admin/notifications` to see whether delivery is activated and to inspect pending/failed counts. Check the workspace routinely rather than relying on inbox notifications.
 2. Review contact/company, location, requested service, authorized access, equipment, photos/documents supplied through approved channels, and preferred date. Change to Reviewing. The date is a preference, not a reservation.
 3. Prepare labor/material/travel/tax line items as appropriate. Verify quote total, deposit (credited to total), due date, scope/exclusions, scheduling and cancellation/refund conditions. The app does not determine tax obligations. Supply project-specific terms before collecting payment.
 4. Issue the quote only after checking all fields; issued amounts are locked. A client approval records acceptance. **Awaiting Approval** flags outstanding approval. **Ready to Schedule** flags approved quotes with the requested deposit recorded; confirm a time separately before setting Scheduled.
@@ -24,7 +24,7 @@ This guide covers the current customer platform on `feature/customer-platform`. 
 - A return from Checkout is not payment confirmation. Match the invoice to Stripe's successful payment and webhook delivery before collecting another payment.
 - For a mismatch: note the invoice number, check payment/session and currency/amount in Stripe, review webhook delivery, and inspect Vercel function logs. Retry failed webhook deliveries through Stripe after fixing the endpoint/configuration. Do not manually edit paid totals or create a second charge as a workaround.
 - Partial/full refunds are performed in Stripe. The cumulative refund webhook updates net paid, history, activity and outstanding balance. Duplicate/stale deliveries are protected by the ledger.
-- **A refund reopens the outstanding balance.** For a cancelled/adjusted job, resolve the invoice treatment before asking the client to pay again. Project cancellation alone does not void the invoice. Safe self-service quote amendments/credit notes/voiding are not implemented; use a reviewed reconciliation procedure, not arbitrary SQL edits. Keep test records clearly separated from real jobs.
+- Refunds update an active invoice’s balance. Use the cancellation workflow below to stop collection on a cancelled job; void invoices stay void. Credit notes and partial retained-fee amendments are not implemented. Resolve paid scope changes with the client before refund/replacement.
 - Issue only reviewed quotes. If an issued quote is wrong, pause collection, document the correction and resolve it before proceeding; the dashboard intentionally prevents editing issued amounts.
 
 ## Failure response and monitoring
@@ -53,3 +53,26 @@ Backup coverage and a successful restore have not been established by this pass.
 - Mobile CSS checks pass at 320/375/390/768 widths. Separately check real iOS/Android keyboard, zoom, browser navigation and hosted checkout; narrow iframe tests do not establish these.
 - Backups and restore rehearsal recorded; uptime/error alert recipients configured; operator knows how to review requests and messages.
 - Retain the current feature branch/draft PR until these checks are complete. Do not treat passing unit tests or the preview as launch authorization.
+
+
+## Invoice cancellation and replacement
+
+- Use Cancel Invoice with a client-visible reason. Also Cancel Project completes project cancellation only once the invoice can be voided.
+- Collection pauses immediately. Open Stripe Checkout sessions are expired; submitted payments are reconciled. Unknown or unfinished session creation stays paused for manual review/retry. Never assume an ambiguous checkout failed or issue a replacement payment.
+- A retained payment prevents voiding. Refund the agreed amount separately in Stripe, wait for webhook reconciliation, then retry cancellation. No automatic refund is issued. A successful void requires zero retained payments and no unresolved checkout.
+- Void invoices remain in the history with the original amounts, reason, actor and timestamp. They show zero due and cannot collect. A replacement receives its own invoice number; reopen a cancelled project to Reviewing first if appropriate.
+- Late payments are still recorded even if an invoice is void; review any such payment for refund. Refund events never reopen a void invoice.
+
+## Email activation and delivery
+
+Project notifications are implemented, but SMTP delivery is OFF until configured. This is separate from Supabase Auth's signup/reset SMTP configuration.
+
+1. Supply a verified sender email (`EMAIL_FROM`) and business alert inbox (`NOTIFY_EMAIL`). No owner login email is published or used as an alert recipient by default.
+2. Set server-only `SMTP_HOST`, `SMTP_PORT` (465 TLS or 587 STARTTLS), `SMTP_USER`, and `SMTP_PASSWORD`. TLS certificate validation stays enabled. Supply credentials through the hosting provider's secret fields, never chat or source code.
+3. Set `NOTIFICATION_SITE_URL` to the exact canonical HTTPS website origin, and set `NOTIFICATIONS_ENABLED=true` only after reviewing queued test activity. Existing records are not backfilled, but new preview events are queued. Avoid sharing a production database with previews once serving clients.
+4. For Supabase Auth, enter the same provider's permitted SMTP settings in Authentication > Email > SMTP. Configure sender-domain SPF/DKIM/DMARC per the mail provider. App environment variables do not configure Supabase's mailer.
+5. Run Process Due Emails at `/admin/notifications`, confirm receipt at both the business inbox and a test customer inbox, and check provider delivery/bounce reporting. A mail-server acceptance is not an inbox receipt.
+6. Successful request/reply/quote/status/payment actions launch a background worker. Configure an authenticated recurring GET `/api/notifications` with `Authorization: Bearer <CRON_SECRET>` for unattended retries. No public, unauthenticated sending endpoint exists. A recurring scheduler is not claimed configured; use a hosting plan/scheduler that supports the desired frequency.
+7. Workers claim at most two due records, with five-minute leases and exponential retry delays (max one hour), up to eight attempts. Failed records remain visible. Have an operator check failed deliveries/credentials and recipient validity before resetting status/attempts via controlled service-role maintenance; inspect provider logs first to avoid repeating an already accepted email.
+
+SMTP provides at-least-once delivery, not exactly-once delivery: a crash after mail acceptance but before queue acknowledgement may repeat a notification. Stable Message-ID values help mail threading but do not guarantee provider deduplication. Emails contain event descriptions and sign-in links; addresses, project message bodies and payment details stay in the portal.

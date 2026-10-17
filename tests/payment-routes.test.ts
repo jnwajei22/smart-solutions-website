@@ -17,6 +17,9 @@ async function route(
   dependencies: Record<string, Record<string, unknown>>,
 ) {
   dependencies = {
+    "../../../lib/notifications": { scheduleNotifications: () => {} },
+    "../../../../lib/notifications": { scheduleNotifications: () => {} },
+    "../../../lib/cancellation": { cancelInvoice: async () => {} },
     "../../../lib/observability": { logFailure: () => {} },
     ...dependencies,
   };

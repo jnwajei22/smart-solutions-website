@@ -41,7 +41,7 @@ Create verified accounts A and B. Submit A's project. As admin, issue an itemize
 - Issued quote amounts/terms are immutable in the UI; one invoice per request. Revised scope should be a new request/quote. Void/credit-note workflows and tax automation are not implemented.
 - Payments are against issued invoices only. Deposits are credited to invoice totals. Customer-entered amounts are never accepted.
 - Refunds are initiated in Stripe, then reconciled to the portal. A refund reopens the balance under the current scope; the operator must review cancellation/refund outcomes before requesting further payment. Full cancellation accounting needs a future void/credit-note workflow.
-- No automatic lead/invoice/message email notifications yet. New requests and replies are visible in `/admin`; account verification and recovery emails come from Supabase. Monitor the dashboard during the launch sprint.
+- Transactional email outbox and SMTP worker are implemented. Delivery requires explicit configuration; inspect `/admin/notifications`. Supabase account emails have separate SMTP settings. See `docs/operations.md`.
 - No uploads, customer device secrets, recurring billing, or third-party customer import.
 - Database selections currently load all accessible records; add pagination as volume grows.
 - No real Supabase/Stripe/Vercel credentials were available during implementation. Production-provider end-to-end verification is therefore still required.
@@ -60,7 +60,9 @@ Build/type checking and local database integration checks are automated. This en
 ## Client help and operating the workspace
 
 - Public client instructions: `/help`. Set `SUPPORT_EMAIL` to the approved public business support address in Vercel Preview and Production, then redeploy. Leave unset until the owner supplies an address; private account email is never used as fallback. This address is display-only and does not configure SMTP.
-- Admin work queue: `/admin`, with search and review/reply/approval/scheduling filters. Check it routinely; outbound request/message notifications are not yet enabled. Refresh Workspace keeps unsent per-request drafts while refreshing server data. Drafts are in-memory only and are lost on a full reload or tab close.
+- Admin work queue: `/admin`, with search and review/reply/approval/scheduling filters. Check it routinely; check `/admin/notifications` for delivery activation and queue status. Refresh Workspace keeps unsent per-request drafts while refreshing server data. Drafts are in-memory only and are lost on a full reload or tab close.
 - Protected operator instructions: `/admin/operations`. Full release, refund, backup, and incident steps: `docs/operations.md`.
 - `/api/health` is a no-store liveness endpoint only. It exposes no customer/provider data and does not certify database, SMTP, or Stripe health. External uptime and error-alert routing still require provider configuration.
 - Preview-only QA tools: `/preview/responsive?width=375&page=request`, `/preview/admin`, and `/preview/invoice`. They return 404 in production and use fictional data. Frame widths exercise responsive CSS, not device/browser emulation.
+
+- Apply `supabase/migrations/20261017001805_invoice_cancellation_notifications.sql` to an existing installation before deploying the cancellation/notification code. Fresh installations run `supabase/schema.sql`, which includes it.

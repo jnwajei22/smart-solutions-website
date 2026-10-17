@@ -114,6 +114,10 @@ export type Invoice = {
   created_at: string;
   accepted_at: string | null;
   terms: string;
+  collection_paused_at?: string | null;
+  cancellation_reason?: string | null;
+  voided_at?: string | null;
+  cancel_project_requested?: boolean;
 };
 export type Payment = {
   id: string;

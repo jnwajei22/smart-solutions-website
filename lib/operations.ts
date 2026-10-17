@@ -20,12 +20,16 @@ export function requestAttention(
     needsReply: latest?.author_id === job.customer_id,
     needsReview:
       active && ["requested", "reviewing"].includes(job.status) && !invoice,
-    awaitingApproval: active && Boolean(invoice && !invoice.accepted_at),
+    awaitingApproval:
+      active &&
+      Boolean(invoice && !invoice.collection_paused_at && !invoice.accepted_at),
     readyToSchedule:
       active &&
       ["requested", "reviewing", "quoted"].includes(job.status) &&
       Boolean(
-        invoice?.accepted_at && invoice.paid_cents >= invoice.deposit_cents,
+        invoice?.accepted_at &&
+        !invoice.collection_paused_at &&
+        invoice.paid_cents >= invoice.deposit_cents,
       ),
   };
 }

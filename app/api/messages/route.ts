@@ -1,3 +1,4 @@
+import { scheduleNotifications } from "../../../lib/notifications";
 import { logFailure } from "../../../lib/observability";
 import { NextResponse } from "next/server";
 import { currentUser, adminClient, configured } from "../../../lib/supabase";
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
       .from("messages")
       .insert({ request_id: job.id, author_id: user.id, body: b.body.trim() });
     if (error) throw error;
+    scheduleNotifications();
     return NextResponse.json({ saved: true });
   } catch (error) {
     logFailure("message_save_failed", error);
