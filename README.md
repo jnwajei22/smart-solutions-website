@@ -38,9 +38,9 @@ Create verified accounts A and B. Submit A's project. As admin, issue an itemize
 
 - Requests require a verified account. Quotes are issued manually; prices are not inferred automatically from customer descriptions.
 - Scheduling changes/cancellations are conversation requests. Admin changes project status after confirming the arrangement; this is not a calendar booking engine.
-- Issued quote amounts/terms are immutable in the UI; one invoice per request. Revised scope should be a new request/quote. Void/credit-note workflows and tax automation are not implemented.
+- Issued quote amounts/terms are immutable. Cancel Invoice pauses collection and voids only after checkout/payment reconciliation. Void history is retained and a new invoice number can replace a cancelled quote. Partial credit notes and tax automation are not implemented.
 - Payments are against issued invoices only. Deposits are credited to invoice totals. Customer-entered amounts are never accepted.
-- Refunds are initiated in Stripe, then reconciled to the portal. A refund reopens the balance under the current scope; the operator must review cancellation/refund outcomes before requesting further payment. Full cancellation accounting needs a future void/credit-note workflow.
+- Refunds are initiated separately in Stripe and reconciled to the portal. Active invoice balances adjust; void invoices stay void. Retained payments must be resolved before an invoice can be voided.
 - Transactional email outbox and SMTP worker are implemented. Delivery requires explicit configuration; inspect `/admin/notifications`. Supabase account emails have separate SMTP settings. See `docs/operations.md`.
 - No uploads, customer device secrets, recurring billing, or third-party customer import.
 - Database selections currently load all accessible records; add pagination as volume grows.
