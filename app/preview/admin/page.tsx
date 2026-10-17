@@ -26,6 +26,20 @@ export default function SampleAdmin() {
         })),
         messages: [
           {
+            id: "sample-client-one",
+            request_id: "sample-1",
+            author_id: "sample",
+            body: "Could we confirm the cable route before the installation?",
+            created_at: "2026-10-16T14:00:00Z",
+          },
+          {
+            id: "sample-business-one",
+            request_id: "sample-1",
+            author_id: "sample-operator",
+            body: "Absolutely. We’ll review the route and wall plate locations with you before starting.",
+            created_at: "2026-10-16T14:15:00Z",
+          },
+          {
             id: "sample-message",
             request_id: "sample-2",
             author_id: "sample",

@@ -25,6 +25,8 @@ import {
   type PortalData,
   type Invoice,
 } from "../lib/catalog";
+import { ClientCancellation } from "./client-cancellation";
+import { Conversation } from "./conversation";
 import { browserClient } from "../lib/browser";
 export function Portal({
   data,
@@ -209,6 +211,7 @@ export function Portal({
             </Link>
           )}
         </div>
+        <ClientCancellation key={i.id} invoice={i} demo={demo} />
       </article>
     );
   }
@@ -569,19 +572,12 @@ export function Portal({
                     )}
                     <div className="project-messages">
                       <h3>Project conversation</h3>
-                      {data.messages
-                        .filter((m) => m.request_id === j.id)
-                        .map((m) => (
-                          <div className="message-bubble" key={m.id}>
-                            <small>
-                              {m.author_id === j.customer_id
-                                ? "Client"
-                                : "DFW Smart Solutions"}{" "}
-                              · {date(m.created_at)}
-                            </small>
-                            <p>{m.body}</p>
-                          </div>
-                        ))}
+                      <Conversation
+                        messages={data.messages.filter(
+                          (m) => m.request_id === j.id,
+                        )}
+                        customerId={j.customer_id}
+                      />
                       {messageJob === j.id ? (
                         <form onSubmit={sendMessage}>
                           <label>

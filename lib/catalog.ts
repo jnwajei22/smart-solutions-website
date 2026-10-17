@@ -116,6 +116,8 @@ export type Invoice = {
   terms: string;
   collection_paused_at?: string | null;
   cancellation_reason?: string | null;
+  client_cancellation_reason?: string | null;
+  client_cancellation_requested_at?: string | null;
   voided_at?: string | null;
   cancel_project_requested?: boolean;
 };
@@ -143,4 +145,5 @@ export type PortalData = {
   name: string;
   email: string;
   admin: boolean;
+  businessRole?: import("./access").BusinessRole | null;
 };
