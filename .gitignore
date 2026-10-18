@@ -1,7 +1,8 @@
-node_modules
-.next
-out
-.vercel
-.env*.local
-.DS_Store
-npm-debug.log*
+node_modules/
+.next/
+.env*
+!.env.example
+*.tsbuildinfo
+
+# Supabase CLI local metadata
+supabase/.temp/

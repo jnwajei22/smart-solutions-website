@@ -1,0 +1,103 @@
+# Verification — October 15, 2026
+
+Target: `feature/customer-platform`, stable Vercel preview. Stripe account DFW SS, test mode only. No live payment activity.
+
+## Verified against connected services
+
+- Existing $25 deposit and $75 final payment were paid and complete in Stripe, matched to the same invoice; customer screenshots showed $100 paid and $0 outstanding.
+- Independently created a $10 partial deposit refund, then a $15 refund completing the deposit refund, then a $75 refund completing the balance refund. All three succeeded in Stripe. Their `charge.refunded` events had zero pending deliveries. Database totals followed the events without manual balance edits.
+- Final DFW-1001 state: $100 original invoice, $100 refunded, $0 net paid, $100 outstanding, `issued`. This is an intentionally reopened test invoice, not a new customer debt.
+- Replayed an existing refund event and an older cumulative refund inside a rolled-back database transaction: totals stayed at $0 net paid; no stale refund overwrote the larger cumulative amount.
+- With an unrelated authenticated identity, deployed RLS exposed zero invoices, requests, and payments. Authenticated users lack execution privileges on payment/refund recording functions.
+- All eight application tables have RLS enabled. Three server-only tables intentionally have no customer policies.
+- Deployed public routes `/`, `/request`, `/login`, `/preview`, `/privacy`, `/terms` return 200. Signed-out `/portal`, `/admin`, and the test invoice redirect to login.
+- Deployed write APIs reject signed-out access and reject foreign origins. The webhook rejects unsigned requests with 400 after passing Vercel protection through the authorized automation credential.
+
+## Automated handler and database checks
+
+`npm test`: 47 passing tests. `npm run build`: passes. `npm run lint`: passes after repairing the existing Next.js flat ESLint configuration. The request form retains its existing browser-only draft hydration, with a narrowly documented lint exception.
+
+`tests/payment-routes.test.ts` executes the actual checkout/webhook handlers with isolated database and checkout-provider boundaries. It covers identity checks, invoice ownership, required approval, paid invoices, quote acceptance, client price tampering, trusted checkout return URLs, idempotency keys, reuse after cancellation, checkout expiration, paid/unpaid retries, provider outages, real Stripe signature verification, delayed paid events, currency/metadata rejection, cumulative refunds, and database failures that must trigger Stripe retries.
+
+The database suite covers cross-customer access, privilege escalation, quote totals, double payments/events, ambiguous checkout timeouts, full balance settlement, stale refunds, message ownership, and rate limits.
+
+## Remaining limits
+
+- Authenticated hosted browser testing completed on October 16: Stripe Checkout Back/Cancel returned to the portal with $0 paid and $100 outstanding; reopening reused the same open session. Stripe's generic-decline test card displayed the expected declined-card alert. The session remained unpaid/open and the deployed database balance stayed unchanged.
+- Desktop browser visual checks completed. Mobile-width visual QA remains unverified because the available browser control surface does not expose viewport sizing. A fresh account creation was not submitted; the deployed signup form's required Full Name, name autocomplete, and 2–100 character bounds were verified. Prior user-assisted sign-up, request, quote, and successful payment checks remain separate evidence.
+- Supabase's security advisor reports leaked-password protection disabled. Review availability/configuration before customer rollout: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+- Production environment, domain, live Stripe credentials, and live webhook remain outside this preview test. This report is not production launch approval.
+
+No bypass credentials, signing secrets, or payment credentials are stored in this report or source.
+
+
+## Follow-up: account and form polish
+
+- Signup now requires Full Name and saves it as display-only Supabase user metadata. Portal greetings prefer this name, fall back to the customer's own existing service-request name, then use “Client”; email handles are no longer used as names. Authorization remains based on the protected database role.
+- Preferred Date is now required for new requests on both the form and API, with impossible calendar dates rejected. Existing saved requests remain intact.
+- Form labels and project/invoice status displays use consistent capitalization in both customer and business portals. Status storage values and customer-entered names remain unchanged.
+- Password-reset email delivery independently verified: the API accepted the recovery request and a new “Reset your password” email from Supabase Auth arrived in the owner's Gmail inbox on October 16 at 01:28 UTC. The password was not changed and the recovery token was not opened or inspected.
+- Current validation: 47 tests pass, lint passes, production build passes. A React review checked hook order, controlled fields, accessible labels, metadata display versus authorization, and preservation of customer spelling.
+- Authenticated client and business portals were inspected in the hosted browser: the client greeting uses Justin; Project Status options display Requested, Reviewing, Quoted, Scheduled, In Progress, Completed, and Cancelled. Preferred Date is required with no optional caption. Signup displays the required Full Name field. Email delivery is verified; completing the password change itself requires the account owner's participation.
+- Hosted testing exposed fully refunded activity incorrectly labeled as a zero-dollar payment received. Recent Activity now explicitly identifies full and partial refunds and preserves original/refunded details. A regression test covers all three payment activity states.
+
+
+## Business-client signup — October 15 follow-up
+
+- Signup offers Personal and Business account types. Personal requires Full Name; Business requires Business Name (2–160 characters) and Contact Full Name (2–100 characters), plus email and password. Personal submissions discard any previously entered company name.
+- Contact and company names are stored separately as customer-supplied display metadata. Business clients remain ordinary customers; admin authorization still comes exclusively from the protected profiles role.
+- Business portal greetings use the company name. New service requests snapshot the company from the authenticated account, not from request-body overrides. Business names appear alongside the contact on admin requests and printable invoices. Existing requests remain unchanged.
+- Applied the additive business_client_request_names migration to the connected preview database. A request-name snapshot write was verified inside a rolled-back transaction. Existing RLS and role permissions are unchanged. Security advisor findings remain the previously documented server-only tables and disabled leaked-password protection.
+- Automated validation: 51 tests pass; lint and production build pass. Added cases for business/contact separation, switching to Personal, malformed display metadata, name bounds, unknown account types, and account-derived request company snapshots.
+- New business test identity selected by owner: Gmail plus alias ending +dfw-business-test. Browser signup submission, email confirmation, and password change/reset remain pending the new credential handoff; no new account is reported as created yet.
+
+
+## Fresh business account and recovery retry
+
+- Owner submitted the new business signup. Confirmation email delivered October 15 at 9:54 p.m. Central. Supabase confirms account_type=business, company DFW QA Business, contact Justin Nwajei, confirmed email, and protected customer role. Hosted portal showed the company greeting and empty account.
+- RLS tested using the actual new account identity: no admin privileges and zero visible requests, invoices, payments, or messages from the existing customer.
+- Recovery email delivered at 9:59:42 p.m. Central, with the correct callback and reset-password destination. User's screenshot showed provider otp_expired and the generic login screen. Provider logs show rejection at 9:59:49 p.m.; reason for the early token rejection is not established. No password change is reported as successful.
+- Fixed callback error feedback: failed recovery returns to the reset request form with an actionable expired/used-link explanation. Normal signup failures also display an explanation. Reset instructions specify newest email and same browser. Callback preserves recovery intent from the SDK result and forwards a validated concurrent PKCE flow identifier. Failed callbacks do not leak codes or raw provider errors; responses disable caching and referrers.
+- Added actual callback-handler tests for successful recovery, provider recovery type without next, concurrent PKCE matching, invalid flow identifiers, expired tokens, upstream errors, missing tokens, token-hash signup/recovery, external redirect rejection, and unavailable configuration. 60 tests, lint, and production build pass. A fresh hosted recovery retry remains necessary to establish successful password change.
+
+
+## Mobile, client guidance, and operational handoff
+
+- Added accessible public mobile navigation and a dismissible portal menu with expanded-state controls, Escape handling, and keyboard focus return. Mobile inputs use 16px text; inspected business signup fields measured 48px high.
+- Responsive QA uses same-origin browser frames at 320, 375, 390, and 768px widths. Audited home, request, login, sample portal, sample admin, sample invoice, help, terms, and privacy: 36 page/width combinations had no page-level horizontal overflow. Desktop frame scrollbars reduce the content viewport; this is responsive CSS coverage, not iOS/Android device or keyboard emulation.
+- Hosted interaction checks: public mobile menu opens; portal navigation closes after choosing a tab; invoice and payment-history tabs fit the narrow layout; payment ledger overflow stays inside its own horizontal scroll region. Company search and Need a Reply filtering correctly isolate the waiting client.
+- Verified the operational draft fix in the sample business dashboard: a quote/reply draft did not appear on another client and was restored on returning to its own request. Drafts survive workspace refresh/switching within the mounted page, not full reload/tab closure.
+- A visual check caught wrapped invoice currency at the narrowest width. Mobile line-item cards replace the cramped table; desktop/printed invoices retain the table. Payment history now exposes a labeled keyboard-focusable scroll region and a mobile swipe hint.
+- Added public /help, clearer submission follow-up, descriptive cancellation/refund coordination, privacy coverage for business/account details and hosting, and safer generic page-error instructions. No unapproved fixed refund charges, warranties, or response guarantees were introduced.
+- Admin workspace includes attention counts, search, filters, refresh, and a protected /admin/operations guide. /api/health exposes application liveness only. Request/message failures use logs that omit customer content and raw provider messages; the logging test verifies this.
+- Local production-mode HTTP checks confirmed /preview/responsive, /preview/admin, and /preview/invoice return 404; production headers keep X-Frame-Options DENY. /help and /api/health return 200. Preview permits only same-origin frames for QA, with cross-origin framing blocked.
+- 64 automated tests pass; lint and production build pass. React review covered fixed hook order, controlled form fields, protected server actions, per-request draft isolation, keyboard labels/focus, and the unchanged authorization boundary.
+- Remaining operational setup: actual public support email (not yet supplied), custom SMTP and a successful password-reset retry, outbound notification delivery, external uptime/error alert routing, and verified provider backup/restore coverage. These are documented in docs/operations.md and are not represented as completed. Production domain/live payments remain pending.
+
+- Final hosted follow-up on the invoice readability fix: at the 320px frame, mobile cards show unwrapped $200.00/$400.00/$150.00 amounts with no page overflow. At 768px, the desktop table is visible and mobile cards are hidden. The payment-history region received keyboard focus and ArrowRight scrolled it horizontally. Escape from inside portal navigation closed the menu and returned focus to the toggle. No real request, quote, message, email, or payment was submitted during these responsive checks.
+
+
+## 2026-10-16 cancellation and notification implementation (pending database approval)
+
+- Owner confirmed password reset, new password save and new-password sign-in at 6:47 p.m. Central. This is owner-reported end-to-end success; the precise cause of the previous callback failure was not established.
+- Cancellation pauses collection under an invoice lock before closing Stripe sessions. Zero retained payments and no unresolved attempt are required before void. The project can be cancelled in the same completion transaction; active invoices block ordinary project cancellation. A void original remains in history when a replacement is issued.
+- Webhook reconciliation preserves void status on late payment/refund events. New Checkout creation rechecks invoice status after saving its session so a concurrent cancellation can close the just-created checkout.
+- Database triggers queue service notifications atomically with request/message/quote/status/payment changes. Queue contents are service-role-only, deduplicated by event key, and claimed with expiring leases. The SMTP worker is explicitly disabled until environment configuration is complete. It uses verified account addresses for customer email, fixed portal links, TLS, redacted failures and retry backoff.
+- Automated checks cover zero-net cancellation, retained-fund rejection, unresolved checkout rejection, history/replacements, duplicate cancellation, refund ordering, queue transaction rollback, RLS, leases, provider session expiration, paid/ambiguous outcomes, SMTP success/failure, canonical content and worker authentication.
+- Remote migration application was rejected by automatic approval review because it changes connected database payment functions and removes an invoice constraint. No migration was applied. Work is kept on a separate review branch so the working customer-platform preview remains unchanged. Local Postgres-compatible tests are staging validation; provider backup/restore validation is still outstanding.
+- App and Supabase Auth SMTP have not been activated. Sender identity, business alert inbox, SMTP credentials/domain verification and a recurring retry scheduler remain required. No customer email was sent by these tests.
+
+
+## Approved activation, 2026-10-16 evening
+
+- Owner explicitly approved application after backup/staging checks. Created an owner-only `private_release_20261017` snapshot of the eight affected public tables and the four prior payment/quote function definitions. Verified every snapshot table matches the source. This is migration recovery coverage inside the project, not a verified provider disaster-recovery backup. No authentication secrets were copied.
+- Staged the connected project's actual four function definitions in an isolated PGlite database, populated an invoice before applying the migration, and verified original invoice fields survived. Service-role cancellation and transactional outbox triggers passed; a table restore copy matched its source. All 72 automated tests passed again.
+- Applied the approved `invoice_cancellation_notifications` migration successfully. A connected-database service-role smoke check voided a synthetic invoice, cancelled its synthetic project and queued the notice, then rolled back every test record. The original request count was preserved and the outbox remained empty. Snapshot schema access is denied to authenticated users.
+- The security advisor reported no new warnings beyond the pre-existing leaked-password-protection setting; service-only queue/snapshot tables intentionally have RLS with no client policies.
+- SMTP remains disabled because no sender identity/inbox/provider credentials exist yet. Business mailbox and automated delivery setup remain pre-launch work. No notification email was sent during activation.
+
+## Release checks and security follow-up
+
+- Added secret-free GitHub push/PR checks using pinned actions and Node 24: production dependency audit, tests, lint and build. Updated Next.js/eslint-config-next to 16.4.2 after a production dependency audit found critical/high advisories in the previous dependency tree. Production-only audit is now clear; an unpatched development-only braces/ESLint glob advisory remains documented in docs/security-readiness.md.
+- Added admin authorization/project-matching regressions and impossible due-date rejection. Quote approval now detects a lost conditional-update race instead of reporting an approval that was not saved. 74 tests, lint and the updated production build pass locally.
+- The hosted admin page correctly redirects the signed-out browser to sign-in. Authenticated end-to-end cancellation remains pending that sign-in; no real hosted invoice cancellation is claimed from this check.
