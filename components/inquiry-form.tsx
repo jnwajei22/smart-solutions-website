@@ -14,16 +14,16 @@ export function InquiryForm() {
         "Property Type",
         "City",
         "ZIP Code",
-        "Preferred Weekend",
+        "Preferred Timing",
         "Project Details",
       ].map((k) => `${k}: ${data.get(k) || "Not specified"}`),
     ].join("\n\n");
-    window.location.href = `mailto:${inquiryEmail}?subject=${encodeURIComponent("Weekend IT Project Inquiry")}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:${inquiryEmail}?subject=${encodeURIComponent("DFW Smart Solutions Project Inquiry")}&body=${encodeURIComponent(body)}`;
     setPrepared(true);
   }
   return (
     <form onSubmit={submit} className="form-card">
-      <h2>Tell Justin About Your Project</h2>
+      <h2>Tell Us About Your Project</h2>
       <p>
         This form opens a prepared email. Review it and press Send in your email
         app. Nothing is sent or booked by this website.
@@ -80,11 +80,11 @@ export function InquiryForm() {
         </label>
       </div>
       <label>
-        Preferred Weekend
+        Preferred Timing
         <input
-          name="Preferred Weekend"
+          name="Preferred Timing"
           maxLength={100}
-          placeholder="e.g. A Saturday in November; flexible"
+          placeholder="e.g. A weekend in November; flexible"
         />
       </label>
       <label>
@@ -99,16 +99,16 @@ export function InquiryForm() {
         />
       </label>
       <p className="fine-print">
-        Initial focus: small solo IT tasks. Cedar Hill and southern Dallas
-        County; other locations reviewed individually. Launch setup is in
-        progress; no appointments or payments are accepted here.
+        DFW project inquiries are reviewed for scope, equipment, staffing,
+        location, and scheduling. Launch setup is in progress; no appointments
+        or payments are accepted here.
       </p>
       <button className="button full">Prepare Inquiry Email →</button>
       {prepared && (
         <p className="alert" role="status">
           Your email app was requested. Your inquiry has not been sent by this
           website. Review the message and press Send. If no app opened, email
-          Justin directly using the address below.
+          DFW Smart Solutions directly using the address below.
         </p>
       )}
       <p>
