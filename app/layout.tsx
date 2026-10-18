@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     template: "%s | DFW Smart Solutions",
   },
   description:
-    "Weekend IT project inquiries for Cedar Hill and southern Dallas County. Explore small Wi-Fi, workstation, and onsite support tasks with DFW Smart Solutions.",
+    "Ethernet cabling, Wi-Fi, network organization, TV mounting, and smart-home project inquiries for homes and businesses across Dallas–Fort Worth.",
 };
 export default function RootLayout({
   children,

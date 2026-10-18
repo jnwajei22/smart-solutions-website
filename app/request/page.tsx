@@ -11,19 +11,19 @@ export default function RequestPage() {
         <Header />
         <main className="container form-page">
           <div className="form-intro">
-            <div className="eyebrow">WEEKEND IT PROJECT INQUIRIES</div>
+            <div className="eyebrow">DFW SMART SOLUTIONS PROJECT INQUIRIES</div>
             <h1>
               Let’s discuss
               <br />
               <em>your project.</em>
             </h1>
             <p>
-              Preparing to launch in Cedar Hill and southern Dallas County.
-              Share your needs without creating an account.
+              Preparing to launch across Dallas–Fort Worth. Share your needs
+              without creating an account.
             </p>
             <p>
               Your inquiry opens in your email app. Please press Send there to
-              reach Justin.
+              reach DFW Smart Solutions.
             </p>
           </div>
           <InquiryForm />

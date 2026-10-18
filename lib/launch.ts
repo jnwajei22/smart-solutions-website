@@ -6,7 +6,7 @@ export function inquiryOnly() {
       process.env.PUBLIC_INQUIRY_ONLY !== "false")
   );
 }
-export const inquiryEmail = "jnwajei22@gmail.com";
+export const inquiryEmail = "dfwsmartsol@gmail.com";
 export function launchRoute(path: string) {
   if (path.startsWith("/api/")) return path === "/api/health" ? null : "api";
   return [

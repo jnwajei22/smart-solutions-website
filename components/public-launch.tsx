@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header, Footer } from "./brand";
+import { services } from "../lib/catalog";
 import { inquiryEmail } from "../lib/launch";
 export function PublicLaunch() {
   return (
@@ -13,14 +14,14 @@ export function PublicLaunch() {
                 DFW SMART SOLUTIONS · PREPARING TO LAUNCH
               </div>
               <h1>
-                Your technology.
+                Your space.
                 <br />
-                <em>A clearer next step.</em>
+                <em>Only smarter.</em>
               </h1>
               <p>
-                Planning a small IT project? Tell Justin what you need. We’re
-                exploring weekend support for homes, small businesses, and local
-                organizations.
+                Networks, connected spaces, and practical technology support for
+                homes, businesses, and organizations across Dallas–Fort Worth.
+                Tell us about your project as we prepare to launch.
               </p>
               <div className="actions">
                 <Link href="/request" className="button">
@@ -31,19 +32,18 @@ export function PublicLaunch() {
                 </a>
               </div>
               <p className="hero-note">
-                Cedar Hill and southern Dallas County · Saturday/Sunday
-                availability
+                Dallas–Fort Worth, Texas · Scheduling confirmed by project
               </p>
             </div>
             <div className="form-card">
               <div className="eyebrow">START WITH A CONVERSATION</div>
               <h2>
-                Small scope.
+                Clear scope.
                 <br />
-                Personal attention.
+                Connected solutions.
               </h2>
               <p>
-                One local point of contact, a written scope, and clear pricing
+                A coordinated approach, a written scope, and itemized pricing
                 before any work is agreed.
               </p>
               <p>
@@ -52,7 +52,7 @@ export function PublicLaunch() {
                 yet.
               </p>
               <a className="text-link" href={`mailto:${inquiryEmail}`}>
-                Email Justin →
+                Contact DFW Smart Solutions →
               </a>
             </div>
           </div>
@@ -60,28 +60,15 @@ export function PublicLaunch() {
         <section id="services" className="section container">
           <div className="section-heading">
             <div>
-              <div className="eyebrow">INITIAL SERVICE FOCUS</div>
-              <h2>Practical help for everyday IT.</h2>
+              <div className="eyebrow">OUR SERVICES</div>
+              <h2>Smarter connections for your space.</h2>
             </div>
           </div>
           <div className="service-grid">
-            {[
-              [
-                "Wi-Fi & Connectivity",
-                "Discuss router setup, device connections, and basic home or small-office connectivity troubleshooting.",
-              ],
-              [
-                "Workstation & Peripheral Setup",
-                "Discuss computer, monitor, printer, and other peripheral setup using equipment already available onsite.",
-              ],
-              [
-                "Onsite IT Assistance",
-                "Explore equipment inventory, labeling and documentation, or hands-on assistance guided by your existing IT provider.",
-              ],
-            ].map(([title, description]) => (
-              <article className="service-card" key={title}>
-                <h3>{title}</h3>
-                <p>{description}</p>
+            {services.map((service) => (
+              <article className="service-card" key={service.id}>
+                <h3>{service.name}</h3>
+                <p>{service.description}</p>
                 <Link className="text-link" href="/request">
                   Discuss Your Project →
                 </Link>
@@ -90,9 +77,9 @@ export function PublicLaunch() {
           </div>
           <p>
             Each inquiry is reviewed for technical fit, access, equipment,
-            location, and availability. Installation, in-wall cabling, TV
-            mounting, security systems, and electrical work are outside this
-            initial launch scope.
+            location, staffing, and availability before a quote or appointment
+            is agreed. Security systems and mains electrical work are outside
+            our service menu.
           </p>
         </section>
         <section id="how-it-works" className="process-section">
@@ -103,12 +90,12 @@ export function PublicLaunch() {
                 [
                   "01",
                   "Share the Need",
-                  "Tell us about the task, city/ZIP, equipment, and preferred weekend.",
+                  "Tell us about your project, city/ZIP, equipment, and preferred timing.",
                 ],
                 [
                   "02",
                   "Review the Fit",
-                  "Justin follows up by email to clarify scope and requirements. An inquiry is not a booking.",
+                  "We follow up by email to clarify scope and requirements. An inquiry is not a booking.",
                 ],
                 [
                   "03",
@@ -166,18 +153,17 @@ export function LaunchInformation({ privacy = false }: { privacy?: boolean }) {
             </p>
             <p>
               Do not include passwords, access codes, sensitive documents, or
-              payment information. Contact Justin by email for questions about
-              access, corrections, or deletion of inquiry correspondence;
-              records may be retained where required by law.
+              payment information. Contact DFW Smart Solutions by email for
+              questions about access, corrections, or deletion of inquiry
+              correspondence; records may be retained where required by law.
             </p>
           </>
         ) : (
           <>
             <p>
-              We’re preparing to launch and gathering inquiries for small, solo
-              weekend IT assignments in Cedar Hill and southern Dallas County.
-              An inquiry does not book an appointment, authorize work, or
-              guarantee service availability.
+              We’re preparing to launch and gathering project inquiries for DFW
+              Smart Solutions across Dallas–Fort Worth. An inquiry does not book
+              an appointment, authorize work, or guarantee service availability.
             </p>
             <p>
               Customer accounts, quote approvals, deposits, and online payments
