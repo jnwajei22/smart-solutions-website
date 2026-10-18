@@ -1,7 +1,10 @@
+import { inquiryOnly } from "../../lib/launch";
+import { LaunchInformation } from "../../components/public-launch";
 import { Header, Footer } from "../../components/brand";
 import { SupportContact } from "../../components/support-contact";
 export const metadata = { title: "Privacy notice" };
 export default function Privacy() {
+  if (inquiryOnly()) return <LaunchInformation privacy={true} />;
   return (
     <>
       <Header />

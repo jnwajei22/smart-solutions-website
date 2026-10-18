@@ -1,8 +1,36 @@
+import { inquiryOnly } from "../../lib/launch";
+import { InquiryForm } from "../../components/inquiry-form";
 import { Suspense } from "react";
 import { Header, Footer } from "../../components/brand";
 import { RequestForm } from "../../components/request-form";
 export const metadata = { title: "Request a service" };
 export default function RequestPage() {
+  if (inquiryOnly())
+    return (
+      <>
+        <Header />
+        <main className="container form-page">
+          <div className="form-intro">
+            <div className="eyebrow">WEEKEND IT PROJECT INQUIRIES</div>
+            <h1>
+              Let’s discuss
+              <br />
+              <em>your project.</em>
+            </h1>
+            <p>
+              Preparing to launch in Cedar Hill and southern Dallas County.
+              Share your needs without creating an account.
+            </p>
+            <p>
+              Your inquiry opens in your email app. Please press Send there to
+              reach Justin.
+            </p>
+          </div>
+          <InquiryForm />
+        </main>
+        <Footer />
+      </>
+    );
   return (
     <>
       <Header />

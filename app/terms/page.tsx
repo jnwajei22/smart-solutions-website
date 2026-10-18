@@ -1,8 +1,11 @@
+import { inquiryOnly } from "../../lib/launch";
+import { LaunchInformation } from "../../components/public-launch";
 import { Header, Footer } from "../../components/brand";
 import Link from "next/link";
 import { SupportContact } from "../../components/support-contact";
 export const metadata = { title: "Service terms" };
 export default function Terms() {
+  if (inquiryOnly()) return <LaunchInformation privacy={false} />;
   return (
     <>
       <Header />

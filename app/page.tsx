@@ -1,3 +1,5 @@
+import { inquiryOnly } from "../lib/launch";
+import { PublicLaunch } from "../components/public-launch";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -12,6 +14,7 @@ import {
 import { Header, Footer, ServiceIcon } from "../components/brand";
 import { services } from "../lib/catalog";
 export default function Home() {
+  if (inquiryOnly()) return <PublicLaunch />;
   return (
     <>
       <Header />

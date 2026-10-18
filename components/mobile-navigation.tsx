@@ -1,7 +1,11 @@
 "use client";
 import { useRef, useState } from "react";
 import Link from "next/link";
-export function MobileNavigation() {
+export function MobileNavigation({
+  inquiryOnly = false,
+}: {
+  inquiryOnly?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
   return (
@@ -29,13 +33,15 @@ export function MobileNavigation() {
             ["/#services", "Our Services"],
             ["/#how-it-works", "How It Works"],
             ["/portal", "Client Portal"],
-            ["/request", "Request a Service"],
-            ["/help", "Client Help"],
-          ].map(([href, label]) => (
-            <Link key={href} href={href} onClick={() => setOpen(false)}>
-              {label}
-            </Link>
-          ))}
+            ["/request", inquiryOnly ? "Request a Quote" : "Request a Service"],
+            ["/help", inquiryOnly ? "Inquiry Help" : "Client Help"],
+          ]
+            .filter(([href]) => !inquiryOnly || href !== "/portal")
+            .map(([href, label]) => (
+              <Link key={href} href={href} onClick={() => setOpen(false)}>
+                {label}
+              </Link>
+            ))}
         </nav>
       )}
     </div>

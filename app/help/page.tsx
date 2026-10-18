@@ -1,8 +1,11 @@
+import { inquiryOnly } from "../../lib/launch";
+import { LaunchInformation } from "../../components/public-launch";
 import Link from "next/link";
 import { Header, Footer } from "../../components/brand";
 import { SupportContact } from "../../components/support-contact";
 export const metadata = { title: "Client help" };
 export default function Help() {
+  if (inquiryOnly()) return <LaunchInformation privacy={false} />;
   return (
     <>
       <Header />

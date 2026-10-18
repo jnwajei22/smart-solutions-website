@@ -1,3 +1,4 @@
+import { inquiryOnly } from "../lib/launch";
 import Link from "next/link";
 import { MobileNavigation } from "./mobile-navigation";
 import {
@@ -35,14 +36,16 @@ export function Header() {
         <nav aria-label="Main navigation">
           <Link href="/#services">Our services</Link>
           <Link href="/#how-it-works">How it works</Link>
-          <Link href="/portal">
-            Client portal <ArrowUpRight size={14} />
-          </Link>
+          {!inquiryOnly() && (
+            <Link href="/portal">
+              Client portal <ArrowUpRight size={14} />
+            </Link>
+          )}
         </nav>
         <Link href="/request" className="button small desktop-cta">
           Let’s connect <ArrowUpRight size={16} />
         </Link>
-        <MobileNavigation />
+        <MobileNavigation inquiryOnly={inquiryOnly()} />
       </div>
     </header>
   );
@@ -65,8 +68,10 @@ export function Footer() {
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} DFW Smart Solutions LLC</span>
           <div>
-            <Link href="/portal">Client portal</Link>
-            <Link href="/help">Client help</Link>
+            {!inquiryOnly() && <Link href="/portal">Client portal</Link>}
+            <Link href="/help">
+              {inquiryOnly() ? "Inquiry Help" : "Client Help"}
+            </Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Service terms</Link>
           </div>
