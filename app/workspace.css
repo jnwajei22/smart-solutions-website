@@ -1401,3 +1401,5 @@ button.project-row {
     padding: 17px;
   }
 }
+.admin-page .metrics > div:nth-child(2) small { color: var(--muted); }
+.admin-page > .alert:not(.error) { background: #fff9e9; color: #6e5517; border-color: #e4d5a6; font-size: 12px; line-height: 1.8; border-radius: 8px; }
