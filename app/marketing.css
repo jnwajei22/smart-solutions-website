@@ -211,6 +211,7 @@
   font-weight: 500;
 }
 .marketing-trust {
+  background: var(--pale);
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
