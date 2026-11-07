@@ -8,6 +8,8 @@ const pages = {
   home: "/",
   request: "/request",
   login: "/login",
+  signin: "/preview/login",
+  account: "/preview/account",
   portal: "/preview",
   admin: "/preview/admin",
   invoice: "/preview/invoice",

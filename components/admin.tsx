@@ -4,7 +4,14 @@ import { useRouter } from "next/navigation";
 import { statusLabel } from "../lib/presentation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Save } from "lucide-react";
+import {
+  ArrowUpRight,
+  Save,
+  ClipboardList,
+  MessageSquare,
+  FileCheck,
+  CalendarDays,
+} from "lucide-react";
 import { Conversation } from "./conversation";
 import { QuoteCalculator } from "./quote-calculator";
 import { PricingAudit } from "./pricing-audit";
@@ -106,6 +113,32 @@ export function AdminDashboard({
         (filter === "approval" && a.awaitingApproval) ||
         (filter === "schedule" && a.readyToSchedule)),
   );
+  const queues = [
+    {
+      id: "review",
+      label: "Need review",
+      count: attention.filter((a) => a.needsReview).length,
+      icon: ClipboardList,
+    },
+    {
+      id: "reply",
+      label: "Need a reply",
+      count: attention.filter((a) => a.needsReply).length,
+      icon: MessageSquare,
+    },
+    {
+      id: "approval",
+      label: "Awaiting approval",
+      count: attention.filter((a) => a.awaitingApproval).length,
+      icon: FileCheck,
+    },
+    {
+      id: "schedule",
+      label: "Ready to schedule",
+      count: attention.filter((a) => a.readyToSchedule).length,
+      icon: CalendarDays,
+    },
+  ];
   async function send(body: { action: string; [key: string]: unknown }) {
     if (!canEdit) {
       setError("This dashboard is read only.");
@@ -152,8 +185,8 @@ export function AdminDashboard({
       <main className="container admin-page">
         <div className="portal-heading">
           <div>
-            <div className="eyebrow">DFW SMART SOLUTIONS</div>
-            <h1>Projects.</h1>
+            <div className="eyebrow">BUSINESS WORKSPACE</div>
+            <h1>Good work starts here.</h1>
             <p>Review requests, respond to clients, and keep work moving.</p>
           </div>
         </div>
@@ -167,24 +200,26 @@ export function AdminDashboard({
           </p>
         )}
         <div className="ops-summary" aria-label="Work requiring attention">
-          <span>
-            <strong>{attention.filter((a) => a.needsReview).length}</strong>{" "}
-            Need Review
-          </span>
-          <span>
-            <strong>{attention.filter((a) => a.needsReply).length}</strong> Need
-            a Reply
-          </span>
-          <span>
-            <strong>
-              {attention.filter((a) => a.awaitingApproval).length}
-            </strong>{" "}
-            Awaiting Approval
-          </span>
-          <span>
-            <strong>{attention.filter((a) => a.readyToSchedule).length}</strong>{" "}
-            Ready to Schedule
-          </span>
+          {queues.map(({ id, label, count, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={filter === id}
+              onClick={() => {
+                setFilter(filter === id ? "all" : id);
+                setSearch("");
+              }}
+            >
+              <span className="queue-label">
+                <Icon size={18} aria-hidden="true" />
+                {label}
+              </span>
+              <strong>{String(count).padStart(2, "0")}</strong>
+              <span className="queue-action">
+                View requests <ArrowUpRight size={15} aria-hidden="true" />
+              </span>
+            </button>
+          ))}
         </div>
         <div className="ops-toolbar">
           <label>
@@ -220,11 +255,25 @@ export function AdminDashboard({
             {refreshing ? "Checking for Updates…" : "Refresh Workspace"}
           </button>
         </div>
-        <p className="fine-print">
-          Checks for updates every 30 seconds while this page is visible. Unsent
-          drafts stay in this tab.{" "}
-          <Link href="/admin/operations">Operating guide</Link>
-        </p>
+        <div className="workspace-update-note">
+          <p className="fine-print">
+            {demo
+              ? "Sample workspace. Explore the requests and project sections below."
+              : "Checks for updates every 30 seconds. Unsent drafts stay in this tab."}
+          </p>
+          {(search || filter !== "all") && (
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => {
+                setSearch("");
+                setFilter("all");
+              }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
         {notice && (
           <p role="status" className="fine-print">
             {notice}
@@ -249,16 +298,21 @@ export function AdminDashboard({
                 ).length
               }
             </strong>
+            <small>Active client projects</small>
           </div>
           <div>
             <span>OUTSTANDING</span>
             <strong>
               {money(
                 data.invoices
-                  .filter((i) => i.status !== "void")
-                  .reduce((a, i) => a + i.total_cents - i.paid_cents, 0),
+                  .filter((i) => i.status === "issued")
+                  .reduce(
+                    (a, i) => a + Math.max(0, i.total_cents - i.paid_cents),
+                    0,
+                  ),
               )}
             </strong>
+            <small>Unpaid issued invoices</small>
           </div>
           <div>
             <span>NET PAYMENTS</span>
@@ -284,7 +338,9 @@ export function AdminDashboard({
           >
             <div className="panel-heading">
               <h2>Service requests</h2>
-              <span>{data.jobs.length}</span>
+              <span role="status">
+                {visible.length} of {data.jobs.length}
+              </span>
             </div>
             {visible.length ? (
               visible.map(({ job: j, needsReply }) => (

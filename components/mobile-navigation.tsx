@@ -32,6 +32,8 @@ export function MobileNavigation({
           {[
             ["/#services", "Our Services"],
             ["/#how-it-works", "How It Works"],
+            ["/#industries", "Spaces We Serve"],
+            ["/#commitment", "Our Commitment"],
             ["/portal", "Client Portal"],
             ["/request", inquiryOnly ? "Request a Quote" : "Request a Service"],
             ["/help", inquiryOnly ? "Inquiry Help" : "Client Help"],

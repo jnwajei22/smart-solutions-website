@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./marketing.css";
+import "./workspace.css";
 export const metadata: Metadata = {
   title: {
     default: "DFW Smart Solutions | Your space. Only smarter.",

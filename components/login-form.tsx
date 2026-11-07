@@ -5,7 +5,54 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { signupMetadata, type ClientAccountType } from "../lib/presentation";
 import { browserClient } from "../lib/browser";
-export function LoginForm({ enabled }: { enabled: boolean }) {
+import { PasswordlessForm } from "./passwordless-form";
+import { loginDestination } from "../lib/auth-navigation";
+export function LoginForm({
+  enabled,
+  emailCodeEnabled = false,
+  emailCodeDemo = false,
+  demo = false,
+}: {
+  enabled: boolean;
+  emailCodeEnabled?: boolean;
+  emailCodeDemo?: boolean;
+  demo?: boolean;
+}) {
+  const params = useSearchParams();
+  const [method, setMethod] = useState(
+    emailCodeEnabled && params.get("flow") !== "recovery"
+      ? "email"
+      : "password",
+  );
+  return (
+    <div className="auth-container">
+      {emailCodeEnabled && enabled && params.get("flow") !== "recovery" && (
+        <div className="auth-methods" role="group" aria-label="Sign-in method">
+          <button
+            type="button"
+            aria-pressed={method === "email"}
+            onClick={() => setMethod("email")}
+          >
+            Email code
+          </button>
+          <button
+            type="button"
+            aria-pressed={method === "password"}
+            onClick={() => setMethod("password")}
+          >
+            Existing password
+          </button>
+        </div>
+      )}
+      {method === "email" && enabled ? (
+        <PasswordlessForm demo={demo || emailCodeDemo} />
+      ) : (
+        <PasswordLoginForm enabled={enabled && !demo} />
+      )}
+    </div>
+  );
+}
+function PasswordLoginForm({ enabled }: { enabled: boolean }) {
   const params = useSearchParams(),
     router = useRouter();
   const [mode, setMode] = useState(
@@ -29,7 +76,7 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
               ? "We could not complete email verification. This message does not mean the link expired. Request a new link and try again."
               : "",
     );
-  const target = params.get("next") === "/request" ? "/request" : "/portal";
+  const target = loginDestination(params.get("next"));
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
