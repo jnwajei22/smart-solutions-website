@@ -22,7 +22,11 @@ The visual refresh is developed on `preview/design-refresh`. Do not merge it to
 
 ## Review scope
 
-Green and cream remain the foundation; Cat5 Blue, Light Blue, and Gold are accents.
+The revised direction uses Cat5 Blue for actions and selected states, Deep Navy for
+large dark surfaces, warm off-white backgrounds, and Gold accents.
+The earlier green refresh is preserved on `backup/green-design-refresh` at
+`42c1ab975b06081d73911ce02b9b1781ee22432f` with immutable preview
+https://smart-solutions-website-p6nuuz9wu-justin-nwajeis-projects.vercel.app/.
 The homepage refresh adds a responsive service selector, concept illustrations,
 four installation standards, industry cards, clearer process and inquiry sections,
 and simplified contact navigation. Illustrations do not represent completed jobs.

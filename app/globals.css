@@ -1,18 +1,18 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Manrope:wght@400;500;600;650;700;750;800&display=swap");
 :root {
-  --green: #004225;
-  --forest: #062f21;
+  --primary: #1e6bff;
+  --navy: #0f172a;
   --gold: #c9a227;
   --blue: #1e6bff;
   --light-blue: #7fa8ff;
   /* A darker companion keeps small blue links readable on light surfaces. */
   --blue-ink: #1554c7;
   --cream: #f8f8f2;
-  --ink: #182e25;
-  --muted: #68746d;
-  --line: #dde3dc;
+  --ink: #0f172a;
+  --muted: #5e6a83;
+  --line: #d6dce8;
   --white: #fff;
-  --pale: #edf2e9;
+  --pale: #edf2fa;
   --radius: 14px;
 }
 * {
@@ -85,7 +85,7 @@ p {
 }
 em {
   font-style: normal;
-  color: var(--green);
+  color: var(--primary);
 }
 svg {
   flex-shrink: 0;
@@ -184,9 +184,9 @@ svg {
   align-items: center;
   justify-content: center;
   gap: 18px;
-  background: var(--green);
+  background: var(--primary);
   color: white;
-  border: 1px solid var(--green);
+  border: 1px solid var(--primary);
   border-radius: 7px;
   min-height: 51px;
   padding: 14px 23px;
@@ -197,7 +197,7 @@ svg {
     transform 0.15s;
 }
 .button:hover {
-  background: #075d37;
+  background: #1554c7;
   transform: translateY(-1px);
 }
 .button.small {
@@ -209,14 +209,14 @@ svg {
 .button.gold {
   background: var(--gold);
   border-color: var(--gold);
-  color: #102c20;
+  color: #0f172a;
 }
 .button.gold:hover {
   background: #dec059;
 }
 .button.outline {
   background: transparent;
-  color: var(--green);
+  color: var(--primary);
   border-color: var(--line);
 }
 .button.full {
@@ -233,17 +233,17 @@ svg {
   padding: 0;
 }
 .text-link:hover {
-  color: var(--green);
+  color: var(--primary);
   text-decoration: underline;
 }
-/* Public brand accents: green leads; blue signals services and gold adds detail. */
+/* Public brand accents: blue leads, navy anchors, and gold adds detail. */
 main .text-link,
 .legal a:not(.button) {
   color: var(--blue-ink);
 }
 main .text-link:hover,
 .legal a:not(.button):hover {
-  color: var(--green);
+  color: var(--primary);
 }
 .nav nav a:hover {
   color: var(--blue-ink);
@@ -265,7 +265,7 @@ main .text-link:hover,
   font-size: 10px;
   letter-spacing: 0.16em;
   font-weight: 700;
-  color: var(--green);
+  color: var(--primary);
   line-height: 1.6;
 }
 .dot {
@@ -373,7 +373,7 @@ main .text-link:hover,
   left: calc(50% - 75px);
   width: 150px;
   height: 157px;
-  background: linear-gradient(140deg, #1b6544, var(--forest));
+  background: linear-gradient(140deg, #1b6544, var(--navy));
   border: 1px solid #47785d;
   border-radius: 14px;
   color: #d8e8d3;
@@ -489,7 +489,7 @@ main .text-link:hover,
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  color: #68746d;
+  color: #5e6a83;
 }
 .trust-strip svg {
   color: var(--gold);
@@ -574,12 +574,12 @@ main .text-link:hover,
   margin-top: auto;
 }
 .service-link:hover {
-  color: var(--green);
+  color: var(--primary);
 }
 .service-prompt {
-  background: var(--green);
+  background: var(--primary);
   color: white;
-  border-color: var(--green);
+  border-color: var(--primary);
   justify-content: center;
 }
 .service-prompt .eyebrow {
@@ -658,7 +658,7 @@ main .text-link:hover,
 .mini-mark {
   font-size: 12px;
   padding: 9px;
-  background: var(--green);
+  background: var(--primary);
   color: white;
   border-radius: 6px;
 }
@@ -692,7 +692,7 @@ main .text-link:hover,
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--green);
+  color: var(--primary);
   flex-shrink: 0;
 }
 .mock-tracker {
@@ -714,7 +714,7 @@ main .text-link:hover,
   color: var(--muted);
 }
 .cta-section {
-  background: var(--green);
+  background: var(--primary);
   padding: 70px 0;
   color: white;
 }
@@ -737,8 +737,8 @@ main .text-link:hover,
   margin-bottom: 0;
 }
 .site-footer {
-  background: #062d20;
-  color: #c8d6cb;
+  background: #0b0f1a;
+  color: #d6dce8;
   padding: 42px 0 22px;
 }
 .footer-top {
@@ -750,7 +750,7 @@ main .text-link:hover,
 }
 .footer-top p {
   font-size: 12px;
-  color: #a6bcae;
+  color: #a9b6ce;
   line-height: 1.8;
 }
 .footer-cta {
@@ -768,7 +768,7 @@ main .text-link:hover,
   padding-top: 20px;
   border-top: 1px solid #ffffff1c;
   font-size: 10px;
-  color: #a3b5a8;
+  color: #a9b6ce;
 }
 .footer-bottom > div {
   display: flex;
@@ -830,11 +830,11 @@ main .text-link:hover,
 input,
 select,
 textarea {
-  border: 1px solid #d5dfd5;
+  border: 1px solid #d6dce8;
   border-radius: 6px;
   padding: 11px 13px;
   width: 100%;
-  background: #fcfdfb;
+  background: #fcfcfa;
   color: var(--ink);
   font-size: 13px;
   min-height: 44px;
@@ -844,7 +844,7 @@ textarea {
 }
 input::placeholder,
 textarea::placeholder {
-  color: #98a297;
+  color: #718099;
   font-size: 12px;
 }
 .field-grid {
@@ -860,7 +860,7 @@ textarea::placeholder {
 }
 .form-section-title > span {
   font-size: 10px;
-  color: var(--green);
+  color: var(--primary);
   background: var(--pale);
   padding: 7px 9px;
   border-radius: 4px;
@@ -894,11 +894,11 @@ textarea::placeholder {
 .segmented input {
   width: 14px;
   min-height: 0;
-  accent-color: var(--green);
+  accent-color: var(--primary);
   margin: 0;
 }
 .segmented .selected {
-  border-color: var(--green);
+  border-color: var(--primary);
   background: #f4f8f0;
 }
 .optional {
@@ -920,7 +920,7 @@ textarea::placeholder {
   border-radius: 7px;
   font-size: 12px;
   margin: 16px 0;
-  color: var(--green);
+  color: var(--primary);
 }
 .alert.error {
   border-color: #edc3ba;
@@ -932,7 +932,7 @@ textarea::placeholder {
   padding-bottom: 60px;
 }
 .success-card > svg {
-  color: var(--green);
+  color: var(--primary);
   margin-bottom: 22px;
 }
 .login-page {
@@ -950,7 +950,7 @@ textarea::placeholder {
   background: none;
   border: 0;
   font-size: 12px;
-  color: var(--green);
+  color: var(--primary);
 }
 .skip-link {
   position: absolute;
@@ -1013,7 +1013,7 @@ textarea::placeholder {
   min-height: 45px;
 }
 .sidebar nav > button.active {
-  background: var(--green);
+  background: var(--primary);
   color: white;
 }
 .nav-count {
@@ -1044,7 +1044,7 @@ textarea::placeholder {
   gap: 8px;
   align-items: center;
   font-size: 11px;
-  color: var(--green);
+  color: var(--primary);
   font-weight: 600;
 }
 .sidebar-bottom {
@@ -1102,7 +1102,7 @@ textarea::placeholder {
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  color: var(--green);
+  color: var(--primary);
 }
 .profile-chip small {
   display: block;
@@ -1187,8 +1187,8 @@ textarea::placeholder {
   color: var(--muted);
 }
 .metrics > div:nth-child(2) {
-  background: var(--green);
-  border-color: var(--green);
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 .metrics > div:nth-child(2) > span,
@@ -1293,7 +1293,7 @@ textarea::placeholder {
   border-radius: 6px;
   padding: 13px 15px;
   font-size: 10px;
-  color: var(--green);
+  color: var(--primary);
   margin-top: 18px;
 }
 .new-project svg:last-child {
@@ -1351,7 +1351,7 @@ textarea::placeholder {
 .activity-dot {
   width: 7px;
   height: 7px;
-  background: var(--green);
+  background: var(--primary);
   border-radius: 50%;
 }
 .portal-footer {
@@ -2363,7 +2363,7 @@ td {
   font-size: 12px;
 }
 .needs-reply {
-  color: var(--green);
+  color: var(--primary);
   font-weight: 600;
 }
 .help-grid {
@@ -2928,8 +2928,8 @@ td {
   min-height: 46px;
 }
 .workspace-navigation a[aria-current="page"] {
-  border-color: var(--green);
-  color: var(--green);
+  border-color: var(--primary);
+  color: var(--primary);
   font-weight: 650;
 }
 .admin-page {
@@ -2959,7 +2959,7 @@ td {
   min-height: 80px;
 }
 .admin-job[aria-pressed="true"] {
-  box-shadow: inset 3px 0 0 var(--green);
+  box-shadow: inset 3px 0 0 var(--primary);
 }
 .admin-detail > h2 {
   margin-bottom: 12px;
@@ -3024,8 +3024,8 @@ td {
   font-weight: 550;
 }
 .project-tabs button[aria-selected="true"] {
-  color: var(--green);
-  border-bottom-color: var(--green);
+  color: var(--primary);
+  border-bottom-color: var(--primary);
 }
 .project-section[hidden] {
   display: none;
@@ -3077,7 +3077,7 @@ td {
   border: 1px solid var(--line);
   border-radius: 20px;
   background: #fff;
-  color: var(--green);
+  color: var(--primary);
   font-size: 12px;
 }
 .quote-state {

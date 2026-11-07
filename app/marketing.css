@@ -1,4 +1,4 @@
-/* Homepage refresh. Scoped to keep the client and business workspaces stable. */
+/* Homepage refresh: blue, navy, warm off-white, and gold. */
 .marketing-home {
   --body-copy: #5e6a83;
 }
@@ -66,12 +66,12 @@
   min-width: 0;
   position: relative;
   height: 470px;
-  border: 1px solid #d9e0d7;
+  border: 1px solid #d6dce8;
   border-radius: 18px;
-  background-color: #edf1e9;
+  background-color: #edf2fa;
   background-image:
-    linear-gradient(#00422506 1px, transparent 1px),
-    linear-gradient(90deg, #00422506 1px, transparent 1px);
+    linear-gradient(#1e6bff06 1px, transparent 1px),
+    linear-gradient(90deg, #1e6bff06 1px, transparent 1px);
   background-size: 24px 24px;
   overflow: hidden;
 }
@@ -83,7 +83,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #53695a;
+  color: #5e6a83;
   font-size: 8px;
   letter-spacing: 0.13em;
 }
@@ -110,7 +110,7 @@
   opacity: 0.5;
 }
 .connection-paths circle {
-  stroke: #0042252b;
+  stroke: #1e6bff2b;
   stroke-dasharray: 3 5;
 }
 .space-hub {
@@ -119,18 +119,18 @@
   height: 162px;
   left: 40%;
   top: 32%;
-  background: linear-gradient(135deg, #166143, var(--green));
-  border: 1px solid #658775;
+  background: linear-gradient(135deg, #244c99, var(--navy));
+  border: 1px solid #5772a1;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  color: #eef2e9;
+  color: #eef2fa;
   transform: rotate(-6deg);
   box-shadow:
-    12px 17px 0 #00422510,
-    0 20px 35px #00422514;
+    12px 17px 0 #0f172a10,
+    0 20px 35px #0f172a14;
 }
 .space-hub > span:not(.hub-indicator) {
   font-size: 7px;
@@ -144,8 +144,8 @@
 .space-hub i {
   width: 18px;
   height: 8px;
-  background: var(--forest);
-  border: 1px solid #759482;
+  background: var(--navy);
+  border: 1px solid #8599bc;
 }
 .hub-indicator {
   position: absolute;
@@ -164,10 +164,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid #d9e0d7;
+  border: 1px solid #d6dce8;
   background: #fffffff5;
   border-radius: 10px;
-  box-shadow: 0 8px 22px #00422508;
+  box-shadow: 0 8px 22px #1e6bff08;
   font-size: 10px;
   color: var(--blue-ink);
 }
@@ -194,7 +194,7 @@
   position: absolute;
   right: 22px;
   top: 13%;
-  color: #66776a;
+  color: #5e6a83;
   font-size: 6px;
   line-height: 1.9;
   letter-spacing: 0.12em;
@@ -204,7 +204,7 @@
   font-size: 19px;
   font-weight: 500;
   letter-spacing: -0.03em;
-  color: var(--green);
+  color: var(--primary);
   margin-bottom: 4px;
 }
 .space-annotation strong {
@@ -225,7 +225,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  color: #53665a;
+  color: #5e6a83;
   font-size: 12px;
 }
 .marketing-trust svg {
@@ -277,25 +277,25 @@
 }
 .solution-option-number {
   font-size: 9px;
-  color: #68746d;
+  color: #5e6a83;
 }
 .solution-options button > svg:first-of-type {
   color: var(--blue);
 }
 .solution-options button > svg:last-child {
   margin-left: auto;
-  color: #68746d;
+  color: #5e6a83;
 }
 .solution-options button:hover {
-  background: #edf2e9;
+  background: #edf2fa;
 }
 .solution-options button[aria-pressed="true"] {
-  background: var(--green);
+  background: var(--primary);
   color: white;
-  border-color: var(--green);
+  border-color: var(--primary);
 }
 .solution-options button[aria-pressed="true"] .solution-option-number {
-  color: #c7d8cb;
+  color: #d6dce8;
 }
 .solution-options button[aria-pressed="true"] > svg:first-of-type {
   color: var(--light-blue);
@@ -319,7 +319,7 @@
 }
 .solution-detail {
   min-width: 0;
-  border: 1px solid #d9e1d7;
+  border: 1px solid #d6dce8;
   border-radius: 14px;
   overflow: hidden;
   background: white;
@@ -328,12 +328,12 @@
   position: relative;
   height: 275px;
   overflow: hidden;
-  background-color: #edf1eb;
+  background-color: #edf2fa;
   background-image:
-    linear-gradient(#00422506 1px, transparent 1px),
-    linear-gradient(90deg, #00422506 1px, transparent 1px);
+    linear-gradient(#1e6bff06 1px, transparent 1px),
+    linear-gradient(90deg, #1e6bff06 1px, transparent 1px);
   background-size: 22px 22px;
-  border-bottom: 1px solid #d9e1d7;
+  border-bottom: 1px solid #d6dce8;
 }
 .illustration-caption {
   position: absolute;
@@ -344,7 +344,7 @@
   justify-content: space-between;
   font-size: 8px;
   letter-spacing: 0.12em;
-  color: #596f62;
+  color: #5e6a83;
 }
 .illustration-bottom {
   position: absolute;
@@ -355,7 +355,7 @@
   align-items: center;
   font-size: 8px;
   letter-spacing: 0.12em;
-  color: #596f62;
+  color: #5e6a83;
 }
 .solution-description {
   padding: 30px 34px 34px;
@@ -385,7 +385,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #40564a;
+  color: #44536e;
   font-size: 13px;
 }
 .solution-description li svg {
@@ -406,13 +406,13 @@
   top: -9px;
   bottom: -8px;
   width: 12px;
-  border: 1px solid #729381;
+  border: 1px solid #8599bc;
   border-radius: 3px;
   background: repeating-linear-gradient(
     to bottom,
-    #2e5944 0 6px,
-    #99ac9e 6px 9px,
-    #2e5944 9px 16px
+    #253d66 0 6px,
+    #9baac2 6px 9px,
+    #253d66 9px 16px
   );
 }
 .rail-left {
@@ -425,11 +425,11 @@
   position: absolute;
   left: 8px;
   right: 8px;
-  background: var(--green);
-  color: #e1e9e1;
-  border: 1px solid #5a7b68;
+  background: var(--primary);
+  color: #e5ebf7;
+  border: 1px solid #5772a1;
   border-radius: 3px;
-  box-shadow: 0 7px 8px #00422515;
+  box-shadow: 0 7px 8px #0f172a15;
 }
 .rack-panel {
   height: 51px;
@@ -449,8 +449,8 @@
 .rack-panel i {
   height: 13px;
   flex: 1;
-  background: #09291e;
-  border: 1px solid #99afa0;
+  background: #0b0f1a;
+  border: 1px solid #9baac2;
   border-bottom: 2px solid var(--gold);
 }
 .patch-leads {
@@ -498,8 +498,8 @@
   height: 22px;
   display: grid;
   place-items: center;
-  background: #e5ebe3;
-  color: #567160;
+  background: #e5ebf7;
+  color: #5e6a83;
   font-size: 6px;
   letter-spacing: 0.15em;
 }
@@ -512,14 +512,14 @@
   position: relative;
   width: 100%;
   height: 100%;
-  border: 2px solid #426b54;
-  background: #f9faf5;
+  border: 2px solid #3562a0;
+  background: #fafbfe;
   transform: perspective(700px) rotateX(24deg) rotateZ(-7deg);
-  box-shadow: 9px 12px 0 #0042250b;
+  box-shadow: 9px 12px 0 #0f172a0b;
 }
 .room {
   position: absolute;
-  border-color: #a2b4a7;
+  border-color: #a8b6cd;
   border-style: solid;
   border-width: 0;
 }
@@ -586,7 +586,7 @@
   left: 33%;
 }
 .illustration-smart .coverage {
-  border-color: #00422544;
+  border-color: #1e6bff44;
 }
 .illustration-smart .device-point {
   background: var(--gold);
@@ -598,14 +598,14 @@
 }
 .av-screen {
   height: 123px;
-  border: 5px solid #203d2d;
+  border: 5px solid #0f172a;
   border-radius: 5px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(130deg, #a6c7bb, #dee7d9 60%, #a6bce9);
+  background: linear-gradient(130deg, #a7bdea, #e5ebf7 60%, #a6bce9);
   display: grid;
   place-items: center;
-  box-shadow: 6px 9px 0 #00422512;
+  box-shadow: 6px 9px 0 #0f172a12;
 }
 .av-screen > div {
   width: 180px;
@@ -619,18 +619,18 @@
 .av-screen span {
   font-size: 10px;
   letter-spacing: 0.22em;
-  color: #254e39;
+  color: #244475;
 }
 .av-raceway {
   width: 7px;
   height: 21px;
-  background: #b5c3b5;
+  background: #b1bdd1;
   margin: auto;
 }
 .av-console {
   height: 23px;
-  border: 1px solid #a6b6a6;
-  background: #dfe7dc;
+  border: 1px solid #a8b6cd;
+  background: #e1e7f2;
   display: flex;
   padding: 7px 20px;
   gap: 35px;
@@ -638,10 +638,10 @@
 }
 .av-console i {
   flex: 1;
-  border-top: 1px solid #b7c4b4;
+  border-top: 1px solid #b1bdd1;
 }
 .commitment-section {
-  background: var(--green);
+  background: var(--navy);
   color: white;
   padding: 82px 0 32px;
   border-top: 3px solid var(--gold);
@@ -650,7 +650,7 @@
   color: #e6cf7c;
 }
 .marketing-home .commitment-section p {
-  color: #d1dfd4;
+  color: #d6dce8;
 }
 .commitment-grid {
   display: grid;
@@ -692,7 +692,7 @@
   margin-top: 47px;
   padding-top: 26px;
   font-size: 12px;
-  color: #d1dfd4;
+  color: #d6dce8;
 }
 .commitment-foot > svg {
   color: var(--gold);
@@ -722,8 +722,8 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #edf1e9;
-  color: var(--green);
+  background: #edf2fa;
+  color: var(--primary);
   border-bottom: 1px solid var(--line);
 }
 .industry-visual > span {
@@ -732,7 +732,7 @@
   left: 20px;
   font-size: 8px;
   letter-spacing: 0.13em;
-  color: #53695a;
+  color: #5e6a83;
 }
 .industry-visual small {
   position: absolute;
@@ -741,7 +741,7 @@
   bottom: 15px;
   font-size: 6px;
   letter-spacing: 0.1em;
-  color: #53695a;
+  color: #5e6a83;
 }
 .industry-visual > svg {
   z-index: 1;
@@ -749,7 +749,7 @@
 .industry-orbit {
   width: 145px;
   height: 145px;
-  border: 1px solid #00422522;
+  border: 1px solid #1e6bff22;
   border-radius: 50%;
   position: absolute;
   top: 25px;
@@ -773,7 +773,7 @@
   background: #f2eedf;
 }
 .industry-card:nth-child(4) .industry-visual {
-  background: #e7eee8;
+  background: #e9eef8;
 }
 .industry-copy {
   padding: 25px 22px;
@@ -801,7 +801,7 @@
   margin-top: auto;
 }
 .marketing-process {
-  background: #edf2e9;
+  background: #edf2fa;
   padding: 80px 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -816,7 +816,7 @@
   justify-content: space-between;
   align-items: center;
   color: var(--blue-ink);
-  border-top: 1px solid #c1cdbb;
+  border-top: 1px solid #c5cfe0;
   padding-top: 19px;
   font-size: 12px;
 }
@@ -835,7 +835,7 @@
 .process-launch-note {
   margin: 35px 0 0;
   padding-top: 22px;
-  border-top: 1px solid #c1cdbb;
+  border-top: 1px solid #c5cfe0;
   font-size: 13px;
 }
 .marketing-contact {
@@ -899,7 +899,7 @@
   width: 58px;
   height: 58px;
   border-radius: 12px;
-  background: #edf1e9;
+  background: #edf2fa;
   color: var(--blue-ink);
   display: grid;
   place-items: center;
@@ -946,7 +946,7 @@
   font-size: 12px;
 }
 .site-footer .footer-top > p > a {
-  color: #dee9df;
+  color: #e5ebf7;
   display: inline-block;
   margin-top: 8px;
   font-size: 13px;
