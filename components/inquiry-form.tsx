@@ -1,7 +1,14 @@
 "use client";
 import { useState } from "react";
 import { inquiryEmail } from "../lib/launch";
-export function InquiryForm() {
+import { services } from "../lib/catalog";
+export function InquiryForm({
+  defaultService = "",
+  defaultProperty = "Residential",
+}: {
+  defaultService?: string;
+  defaultProperty?: "Residential" | "Commercial";
+}) {
   const [prepared, setPrepared] = useState(false);
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -11,6 +18,7 @@ export function InquiryForm() {
       ...[
         "Full Name",
         "Email",
+        "Service",
         "Property Type",
         "City",
         "ZIP Code",
@@ -50,8 +58,19 @@ export function InquiryForm() {
         </label>
       </div>
       <label>
+        Service
+        <select name="Service" defaultValue={defaultService}>
+          <option value="">Help me choose</option>
+          {services.map((service) => (
+            <option value={service.name} key={service.id}>
+              {service.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
         Property Type
-        <select name="Property Type">
+        <select name="Property Type" defaultValue={defaultProperty}>
           <option>Residential</option>
           <option>Commercial</option>
           <option>Government / Organization</option>

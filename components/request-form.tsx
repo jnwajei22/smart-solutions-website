@@ -50,8 +50,17 @@ export function RequestForm() {
           ...value,
           qualification: { ...qualification, ...value.qualification },
         });
-      } else if (services.some((s) => s.id === params.get("service")))
-        setForm((f) => ({ ...f, service: params.get("service")! }));
+      } else {
+        const service = params.get("service");
+        const property = params.get("property");
+        setForm((f) => ({
+          ...f,
+          ...(services.some((s) => s.id === service) && { service: service! }),
+          ...((property === "Residential" || property === "Commercial") && {
+            property_type: property,
+          }),
+        }));
+      }
     } catch {}
   }, [params]);
   function change(key: string, value: string) {

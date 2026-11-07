@@ -1,4 +1,4 @@
-import { inquiryOnly } from "../lib/launch";
+import { inquiryEmail, inquiryOnly } from "../lib/launch";
 import Link from "next/link";
 import { MobileNavigation } from "./mobile-navigation";
 import {
@@ -36,6 +36,7 @@ export function Header() {
         <nav aria-label="Main navigation">
           <Link href="/#services">Our services</Link>
           <Link href="/#how-it-works">How it works</Link>
+          <Link href="/#industries">Your space</Link>
           {!inquiryOnly() && (
             <Link href="/portal">
               Client portal <ArrowUpRight size={14} />
@@ -60,6 +61,8 @@ export function Footer() {
             Smarten up your space.
             <br />
             Dallas–Fort Worth, Texas.
+            <br />
+            <a href={`mailto:${inquiryEmail}`}>{inquiryEmail}</a>
           </p>
           <Link href="/request" className="footer-cta">
             Let’s make it work. <MoveUpRight />

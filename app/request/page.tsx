@@ -3,9 +3,15 @@ import { InquiryForm } from "../../components/inquiry-form";
 import { Suspense } from "react";
 import { Header, Footer } from "../../components/brand";
 import { RequestForm } from "../../components/request-form";
+import { services } from "../../lib/catalog";
 export const metadata = { title: "Request a service" };
-export default function RequestPage() {
-  if (inquiryOnly())
+export default async function RequestPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ service?: string; property?: string }>;
+}) {
+  if (inquiryOnly()) {
+    const query = await searchParams;
     return (
       <>
         <Header />
@@ -26,11 +32,19 @@ export default function RequestPage() {
               reach DFW Smart Solutions.
             </p>
           </div>
-          <InquiryForm />
+          <InquiryForm
+            defaultService={
+              services.find((service) => service.id === query.service)?.name
+            }
+            defaultProperty={
+              query.property === "Commercial" ? "Commercial" : "Residential"
+            }
+          />
         </main>
         <Footer />
       </>
     );
+  }
   return (
     <>
       <Header />
