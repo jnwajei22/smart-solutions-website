@@ -1,7 +1,10 @@
 # Homepage design refresh and rollback
 
-The visual refresh is developed on `preview/design-refresh`. Do not merge it to
-`main` or promote it to production until the owner approves the preview.
+The owner approved publishing the visual refresh on November 7, 2026.
+Production keeps inquiry-only behavior. Two preview branches compare password
+and email-code authentication: `preview/password-auth` and
+`preview/passwordless-auth`. Email-code delivery remains a simulation until SMTP
+and provider templates are configured. Original design rollback points remain below.
 
 ## Preserved original preview
 

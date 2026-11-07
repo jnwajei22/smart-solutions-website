@@ -10,10 +10,12 @@ import { loginDestination } from "../lib/auth-navigation";
 export function LoginForm({
   enabled,
   emailCodeEnabled = false,
+  emailCodeDemo = false,
   demo = false,
 }: {
   enabled: boolean;
   emailCodeEnabled?: boolean;
+  emailCodeDemo?: boolean;
   demo?: boolean;
 }) {
   const params = useSearchParams();
@@ -43,7 +45,7 @@ export function LoginForm({
         </div>
       )}
       {method === "email" && enabled ? (
-        <PasswordlessForm demo={demo} />
+        <PasswordlessForm demo={demo || emailCodeDemo} />
       ) : (
         <PasswordLoginForm enabled={enabled && !demo} />
       )}

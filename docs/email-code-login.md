@@ -38,3 +38,18 @@ single-use and provider-limited; the application does not implement its own OTP.
 The browser simulation does not verify email delivery or real authentication.
 No production credentials, customer records, payments, or provider configuration
 are changed by this implementation.
+
+## Parallel deployment views
+
+The production release keeps inquiry-only behavior with the approved design.
+`preview/password-auth` keeps `EMAIL_CODE_LOGIN_ENABLED=false`.
+`preview/passwordless-auth` uses `EMAIL_CODE_LOGIN_ENABLED=true` with
+`EMAIL_CODE_DEMO_MODE=true` until SMTP and email templates are verified.
+The latter flag only takes effect in Vercel preview environments. It makes the
+email-code form an explicit fictional simulation without changing existing
+password sign-in or recovery. Set it to false for controlled real-code testing
+after the provider is ready. Never treat simulation success as email delivery
+or session verification. Both views use the same implementation.
+
+The domain is not needed to publish the Vercel URLs. Domain registration and
+SMTP remain separate from this design release.

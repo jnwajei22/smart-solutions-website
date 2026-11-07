@@ -38,6 +38,10 @@ export default function Login() {
         <Suspense>
           <LoginForm
             emailCodeEnabled={process.env.EMAIL_CODE_LOGIN_ENABLED === "true"}
+            emailCodeDemo={
+              process.env.VERCEL_ENV === "preview" &&
+              process.env.EMAIL_CODE_DEMO_MODE === "true"
+            }
             enabled={
               !!(
                 process.env.NEXT_PUBLIC_SUPABASE_URL &&
