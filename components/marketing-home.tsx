@@ -11,7 +11,6 @@ import {
   MessageSquare,
   Network,
   Store,
-  UtensilsCrossed,
   Wifi,
   Building2,
 } from "lucide-react";
@@ -69,15 +68,6 @@ const industries = [
     service: "cabling",
     property: "Commercial",
     detail: "CHECKOUT / BACK OFFICE",
-  },
-  {
-    name: "Food service",
-    icon: UtensilsCrossed,
-    label: "BEHIND THE SERVICE",
-    text: "Network and Wi-Fi setup planned around your layout, equipment, and operating hours.",
-    service: "wifi",
-    property: "Commercial",
-    detail: "FRONT OF HOUSE / BACK OF HOUSE",
   },
 ];
 

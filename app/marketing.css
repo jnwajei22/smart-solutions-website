@@ -705,7 +705,7 @@
 }
 .industry-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
 }
 .industry-card {
@@ -772,9 +772,6 @@
 }
 .industry-card:nth-child(3) .industry-visual {
   background: #f2eedf;
-}
-.industry-card:nth-child(4) .industry-visual {
-  background: #e9eef8;
 }
 .industry-copy {
   padding: 25px 22px;
@@ -1106,8 +1103,7 @@
   .solution-illustration {
     height: 250px;
   }
-  .commitment-grid,
-  .industry-grid {
+  .commitment-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 30px;
   }
@@ -1301,6 +1297,7 @@
     line-height: 1.7;
   }
   .industry-grid {
+    grid-template-columns: 1fr;
     gap: 16px;
   }
   .industry-visual {
