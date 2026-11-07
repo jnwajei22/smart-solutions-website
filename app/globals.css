@@ -3,6 +3,10 @@
   --green: #004225;
   --forest: #062f21;
   --gold: #c9a227;
+  --blue: #1e6bff;
+  --light-blue: #7fa8ff;
+  /* A darker companion keeps small blue links readable on light surfaces. */
+  --blue-ink: #1554c7;
   --cream: #f8f8f2;
   --ink: #182e25;
   --muted: #68746d;
@@ -232,6 +236,31 @@ svg {
   color: var(--green);
   text-decoration: underline;
 }
+/* Public brand accents: green leads; blue signals services and gold adds detail. */
+main .text-link,
+.legal a:not(.button) {
+  color: var(--blue-ink);
+}
+main .text-link:hover,
+.legal a:not(.button):hover {
+  color: var(--green);
+}
+.nav nav a:hover {
+  color: var(--blue-ink);
+}
+.hero .form-card {
+  border-top-color: var(--gold);
+  background: linear-gradient(135deg, #1e6bff06, transparent 55%), var(--white);
+}
+.hero .form-card .eyebrow {
+  color: var(--blue-ink);
+}
+.cta-section {
+  border-top: 3px solid var(--gold);
+}
+.footer-cta svg {
+  color: var(--gold);
+}
 .eyebrow {
   font-size: 10px;
   letter-spacing: 0.16em;
@@ -395,7 +424,7 @@ svg {
   padding: 15px 17px;
   box-shadow: 0 8px 25px #1433220a;
   z-index: 3;
-  color: var(--green);
+  color: var(--blue-ink);
   font-size: 10px;
 }
 .scene-node i {
@@ -419,7 +448,7 @@ svg {
 }
 .network-line {
   position: absolute;
-  border: 1px solid #7d9c73;
+  border: 1px solid var(--light-blue);
   z-index: 1;
 }
 .line-one {
@@ -463,7 +492,7 @@ svg {
   color: #68746d;
 }
 .trust-strip svg {
-  color: var(--green);
+  color: var(--gold);
 }
 .section {
   padding: 85px 0;
@@ -490,6 +519,7 @@ svg {
 }
 .service-card {
   border: 1px solid var(--line);
+  border-top-color: var(--blue);
   padding: 28px;
   background: #fff;
   border-radius: var(--radius);
@@ -501,7 +531,7 @@ svg {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: var(--green);
+  color: var(--blue);
 }
 .service-top span {
   font-size: 10px;
@@ -529,6 +559,9 @@ svg {
   gap: 7px;
   align-items: center;
 }
+.service-card li svg {
+  color: var(--gold);
+}
 .service-link {
   display: flex;
   justify-content: space-between;
@@ -537,7 +570,11 @@ svg {
   padding-top: 16px;
   font-size: 12px;
   font-weight: 600;
+  color: var(--blue-ink);
   margin-top: auto;
+}
+.service-link:hover {
+  color: var(--green);
 }
 .service-prompt {
   background: var(--green);
@@ -575,9 +612,9 @@ svg {
 }
 .step-number {
   font-size: 12px;
-  color: var(--green);
+  color: var(--blue-ink);
   display: block;
-  border-top: 1px solid #cbd7c8;
+  border-top: 1px solid var(--gold);
   padding-top: 20px;
 }
 .steps h3 {
