@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { invoiceState } from "../lib/workspace";
+import { clientNextStep } from "../lib/client-workspace";
 import {
   LayoutDashboard,
   Layers,
@@ -33,9 +34,11 @@ import { browserClient } from "../lib/browser";
 export function Portal({
   data,
   demo = false,
+  scenario = "standard",
 }: {
   data: PortalData;
   demo?: boolean;
+  scenario?: string;
 }) {
   const router = useRouter();
   const [refreshing, startRefresh] = useTransition();
@@ -46,6 +49,7 @@ export function Portal({
     [router],
   );
   const menuToggle = useRef<HTMLButtonElement>(null);
+  const [projectFilter, setProjectFilter] = useState("");
   const [tab, setTab] = useState("overview"),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(""),
@@ -60,7 +64,7 @@ export function Portal({
     return () => window.clearInterval(timer);
   }, [demo, busy, refresh]);
   const outstanding = data.invoices
-      .filter((i) => i.status !== "void")
+      .filter((i) => i.status === "issued")
       .reduce((a, i) => a + Math.max(0, i.total_cents - i.paid_cents), 0),
     paid = data.payments.reduce(
       (a, p) => a + p.amount_cents - p.refunded_cents,
@@ -69,6 +73,19 @@ export function Portal({
     active = data.jobs.filter(
       (j) => !["completed", "cancelled"].includes(j.status),
     );
+  const nextStep = clientNextStep(data);
+  const visibleJobs = data.jobs.filter(
+    (job) => !projectFilter || job.id === projectFilter,
+  );
+  const visibleInvoices = data.invoices.filter(
+    (invoice) => !projectFilter || invoice.request_id === projectFilter,
+  );
+  function openSection(section: string, projectId = "") {
+    setTab(section);
+    setProjectFilter(projectId);
+    setMobile(false);
+    setError("");
+  }
   async function action(invoice: Invoice, kind: string) {
     if (demo) {
       setError(
@@ -255,11 +272,10 @@ export function Portal({
           {nav.map(([id, label, Icon]) => (
             <button
               className={tab === id ? "active" : ""}
+              aria-current={tab === id ? "page" : undefined}
               key={id}
               onClick={() => {
-                setTab(id);
-                setMobile(false);
-                setError("");
+                openSection(id);
               }}
             >
               <Icon size={19} />
@@ -289,7 +305,9 @@ export function Portal({
               <Settings2 size={17} /> Business dashboard
             </Link>
           )}
-          {!demo && <Link href="/account">Account Settings</Link>}
+          <Link href={demo ? "/preview/account" : "/account"}>
+            Account settings
+          </Link>
           <Link href="/help">Client help</Link>
           <Link href="/">
             Back to website <ArrowUpRight size={16} />
@@ -339,17 +357,38 @@ export function Portal({
                 <strong>Preview workspace</strong> · Fictional sample data. No
                 requests or payments are processed.
               </span>
-              <Link href="/login">
-                Sign in <ArrowRight size={15} />
+              <Link href="/preview/login">
+                Preview email sign-in <ArrowRight size={15} />
               </Link>
             </div>
+          )}
+          {demo && (
+            <nav
+              className="preview-scenarios"
+              aria-label="Sample account scenario"
+            >
+              {[
+                ["standard", "In progress"],
+                ["approval", "Quote ready"],
+                ["review", "Cancellation review"],
+                ["empty", "New account"],
+              ].map(([id, label]) => (
+                <Link
+                  href={id === "standard" ? "/preview" : `/preview?state=${id}`}
+                  key={id}
+                  aria-current={scenario === id ? "page" : undefined}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
           )}
           <div className="portal-heading">
             <div>
               <div className="eyebrow">YOUR SPACE, CONNECTED</div>
               <h1>
                 {tab === "overview"
-                  ? `Welcome back, ${data.name}.`
+                  ? `Welcome back, ${data.name.split(" ")[0]}.`
                   : tab === "services"
                     ? "Your service requests."
                     : tab === "invoices"
@@ -358,7 +397,7 @@ export function Portal({
               </h1>
               <p>
                 {tab === "overview"
-                  ? "A clear view of your projects and everything that goes with them."
+                  ? "Your projects, conversations, and next steps. All in one place."
                   : tab === "services"
                     ? "From the first conversation to the final handoff."
                     : tab === "invoices"
@@ -412,7 +451,7 @@ export function Portal({
                     OUTSTANDING BALANCE <FileText size={18} />
                   </span>
                   <strong>{money(outstanding)}</strong>
-                  <small>Across issued invoices</small>
+                  <small>Unpaid issued invoices</small>
                 </div>
                 <div>
                   <span>
@@ -435,7 +474,13 @@ export function Portal({
                   </div>
                   {data.jobs.length ? (
                     data.jobs.slice(0, 3).map((j) => (
-                      <div className="project-row" key={j.id}>
+                      <button
+                        type="button"
+                        className="project-row"
+                        key={j.id}
+                        onClick={() => openSection("services", j.id)}
+                        aria-label={`Open ${services.find((service) => service.id === j.service)?.name || j.service} project`}
+                      >
                         <div className="icon-box">
                           <ServiceIcon
                             kind={
@@ -456,7 +501,8 @@ export function Portal({
                         <span className={`status ${j.status}`}>
                           {statusLabel(j.status)}
                         </span>
-                      </div>
+                        <ChevronRight size={16} className="project-row-arrow" />
+                      </button>
                     ))
                   ) : (
                     <Empty
@@ -474,33 +520,24 @@ export function Portal({
                   <div className="icon-box">
                     <Clock size={23} />
                   </div>
-                  <h2>
-                    {data.invoices.some(
-                      (i) => i.status === "issued" && !i.accepted_at,
-                    )
-                      ? "A quote is ready for you."
-                      : outstanding
-                        ? "Keep your project moving."
-                        : active.length
-                          ? "We’re reviewing your project."
-                          : "Make room for something smarter."}
-                  </h2>
-                  <p>
-                    {outstanding
-                      ? "Review the agreed scope and manage your deposit or remaining balance."
-                      : active.length
-                        ? "Your request is saved. Check your services for progress and scheduling updates."
-                        : "Start a new request whenever you’re ready."}
-                  </p>
-                  <button
-                    className="text-link"
-                    onClick={() =>
-                      setTab(outstanding ? "invoices" : "services")
-                    }
-                  >
-                    {outstanding ? "Review invoices" : "View services"}{" "}
-                    <ArrowRight size={17} />
-                  </button>
+                  <h2>{nextStep.title}</h2>
+                  <p>{nextStep.detail}</p>
+                  {nextStep.tab === "request" ? (
+                    <Link href="/request" className="text-link">
+                      {nextStep.action}
+                      <ArrowRight size={17} />
+                    </Link>
+                  ) : (
+                    <button
+                      className="text-link"
+                      onClick={() =>
+                        openSection(nextStep.tab, nextStep.projectId)
+                      }
+                    >
+                      {nextStep.action}
+                      <ArrowRight size={17} />
+                    </button>
+                  )}
                 </section>
               </div>
               <section className="panel">
@@ -555,10 +592,37 @@ export function Portal({
               </section>
             </>
           )}
+          {(tab === "services" || tab === "invoices") &&
+            data.jobs.length > 0 && (
+              <div className="portal-filter-bar">
+                <label>
+                  Project
+                  <select
+                    value={projectFilter}
+                    onChange={(event) => setProjectFilter(event.target.value)}
+                  >
+                    <option value="">All projects</option>
+                    {data.jobs.map((job) => (
+                      <option key={job.id} value={job.id}>
+                        {services.find((service) => service.id === job.service)
+                          ?.name || job.service}{" "}
+                        · {job.city} · {date(job.created_at)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <span>
+                  {tab === "services"
+                    ? visibleJobs.length
+                    : visibleInvoices.length}{" "}
+                  {tab === "services" ? "project(s)" : "quote(s) / invoice(s)"}
+                </span>
+              </div>
+            )}
           {tab === "services" && (
             <div className="request-list">
               {data.jobs.length ? (
-                data.jobs.map((j) => (
+                visibleJobs.map((j) => (
                   <article className="panel request-detail" key={j.id}>
                     <div className="row-between">
                       <div>
@@ -601,7 +665,7 @@ export function Portal({
                     {data.invoices.some((i) => i.request_id === j.id) && (
                       <button
                         className="text-link"
-                        onClick={() => setTab("invoices")}
+                        onClick={() => openSection("invoices", j.id)}
                       >
                         View related quote <ArrowUpRight size={16} />
                       </button>
@@ -679,11 +743,11 @@ export function Portal({
           )}
           {tab === "invoices" && (
             <div className="invoice-list">
-              {data.invoices.length ? (
-                data.invoices.map(invoiceCard)
+              {visibleInvoices.length ? (
+                visibleInvoices.map(invoiceCard)
               ) : (
                 <Empty
-                  title="No quotes or invoices yet."
+                  title="No quotes or invoices for this selection."
                   text="After we clarify your request, your project quote will appear here."
                 />
               )}
@@ -744,8 +808,8 @@ export function Portal({
                 />
               )}
               <p className="fine-print">
-                Payments are confirmed through the payment provider. A
-                successful redirect alone does not mark an invoice paid.
+                Only confirmed transactions appear here. For questions about a
+                payment or refund, contact us through your project conversation.
               </p>
             </section>
           )}

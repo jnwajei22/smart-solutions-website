@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { Suspense } from "react";
 import { Header, Footer } from "../../components/brand";
 import { LoginForm } from "../../components/login-form";
@@ -19,9 +20,24 @@ export default function Login() {
             <br />
             All connected, all in one place.
           </p>
+          <ul className="login-feature-list">
+            <li>
+              <Check size={16} />
+              Your project scope and progress
+            </li>
+            <li>
+              <Check size={16} />
+              Clear quotes and payment history
+            </li>
+            <li>
+              <Check size={16} />
+              One conversation with our team
+            </li>
+          </ul>
         </div>
         <Suspense>
           <LoginForm
+            emailCodeEnabled={process.env.EMAIL_CODE_LOGIN_ENABLED === "true"}
             enabled={
               !!(
                 process.env.NEXT_PUBLIC_SUPABASE_URL &&

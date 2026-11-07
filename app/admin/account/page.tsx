@@ -21,6 +21,7 @@ export default async function Account() {
         <p>Manage your sign-in and review your workspace access.</p>
       </header>
       <AccountPanel
+        emailCodeEnabled={process.env.EMAIL_CODE_LOGIN_ENABLED === "true"}
         name={accountName(user.user_metadata)}
         email={user.email || ""}
         role={roleLabel(role)}

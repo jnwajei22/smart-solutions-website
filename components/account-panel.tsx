@@ -6,10 +6,14 @@ export function AccountPanel({
   name,
   email,
   role,
+  emailCodeEnabled = false,
+  demo = false,
 }: {
   name: string;
   email: string;
   role: string;
+  emailCodeEnabled?: boolean;
+  demo?: boolean;
 }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -30,17 +34,29 @@ export function AccountPanel({
           <dd>{role}</dd>
         </div>
       </dl>
-      <p>
-        Your password belongs to your individual account. Team permissions are
-        managed separately by an administrator.
-      </p>
+      <div className="account-security-note">
+        <strong>Your sign-in, your access.</strong>
+        <p>
+          {emailCodeEnabled
+            ? "Sign in with a one-time email code, or use your existing password. Keep your email account secure."
+            : "Your sign-in belongs to your individual account. Keep your password private and use a unique password."}{" "}
+          Team permissions are managed separately by an administrator.
+        </p>
+      </div>
+      {demo && (
+        <p className="auth-preview-note">
+          Fictional account preview. Account changes and sign-out are disabled.
+        </p>
+      )}
       <div className="form-actions">
-        <Link href="/reset-password" className="button small">
-          Change Password
-        </Link>
+        {!demo && (
+          <Link href="/reset-password" className="button small outline">
+            Manage existing password
+          </Link>
+        )}
         <button
           className="button small outline"
-          disabled={busy}
+          disabled={busy || demo}
           onClick={async () => {
             setBusy(true);
             setError("");
