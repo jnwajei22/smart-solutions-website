@@ -28,7 +28,7 @@ export function WorkspaceNav({
       <div className="container workspace-brand-row">
         <Brand />
         <span className="workspace-role-pill">{roleLabel(role)}</span>
-        <Link href="/portal" className="text-link">
+        <Link href={demo ? "/preview" : "/portal"} className="text-link">
           Client Portal ↗
         </Link>
       </div>

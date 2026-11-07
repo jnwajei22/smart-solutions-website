@@ -961,3 +961,443 @@ button.project-row {
     padding: 8px 10px;
   }
 }
+/* Business operations: readable queues and a focused project workspace. */
+.admin-page {
+  padding-top: 42px;
+  padding-bottom: 70px;
+}
+.admin-page > .portal-heading h1 {
+  font-size: clamp(30px, 3.2vw, 42px);
+}
+.admin-page .workspace-role {
+  font-size: 12px;
+  color: var(--muted);
+}
+.admin-page .ops-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 27px 0;
+}
+.admin-page .ops-summary > button {
+  display: grid;
+  gap: 17px;
+  text-align: left;
+  background: white;
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--line);
+  border-radius: 11px;
+  padding: 22px;
+  color: var(--navy);
+}
+.admin-page .ops-summary > button:hover {
+  border-color: #b7cbef;
+  background: #f8faff;
+}
+.admin-page .ops-summary > button[aria-pressed="true"] {
+  background: var(--pale);
+  border-color: #b7cbef;
+  border-top-color: var(--gold);
+}
+.admin-page .ops-summary span {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}
+.admin-page .queue-label,
+.admin-page .queue-action {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.admin-page .queue-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.admin-page .queue-label svg {
+  color: var(--blue-ink);
+}
+.admin-page .ops-summary strong {
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1;
+}
+.admin-page .queue-action {
+  font-size: 11px;
+  color: var(--blue-ink);
+  justify-content: space-between;
+}
+.admin-page .ops-toolbar {
+  background: var(--pale);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+.admin-page .ops-toolbar label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.admin-page input,
+.admin-page select,
+.admin-page textarea {
+  background: white;
+  font-size: 14px;
+}
+.admin-page .ops-toolbar .button {
+  background: white;
+  white-space: nowrap;
+}
+.workspace-update-note {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.admin-page .fine-print,
+.workspace-settings .fine-print {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.workspace-update-note .fine-print {
+  margin: 0;
+}
+.workspace-update-note .text-link {
+  font-size: 12px;
+  min-height: 36px;
+}
+.admin-page > .metrics {
+  gap: 18px;
+  margin: 26px 0 30px;
+}
+.admin-page .metrics > div {
+  padding: 23px;
+  border-radius: 11px;
+  border-top: 2px solid var(--line);
+}
+.admin-page .metrics > div:nth-child(2) {
+  background: var(--pale);
+  color: var(--navy);
+  border-color: var(--line);
+  border-top-color: var(--gold);
+}
+.admin-page .metrics > div > span {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.admin-page .metrics strong {
+  font-size: 32px;
+  color: var(--navy);
+  margin-top: 12px;
+}
+.admin-page .metrics small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 7px;
+}
+.admin-page .admin-grid {
+  gap: 24px;
+  grid-template-columns: minmax(290px, 0.85fr) minmax(0, 1.65fr);
+}
+.admin-page .panel {
+  border-radius: 12px;
+  padding: 26px;
+}
+.admin-page .request-list-panel {
+  padding: 20px 12px 12px;
+}
+.admin-page .request-list-panel .panel-heading {
+  padding: 0 12px 16px;
+  margin: 0;
+}
+.admin-page .request-list-panel h2 {
+  font-size: 19px;
+}
+.admin-page .panel-heading > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.admin-page .admin-job {
+  padding: 20px 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-radius: 7px;
+}
+.admin-page .admin-job > div {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.admin-page .admin-job:hover {
+  background: #edf2fa77;
+}
+.admin-page .admin-job[aria-pressed="true"] {
+  box-shadow: inset 3px 0 0 var(--gold);
+  background: var(--pale);
+}
+.admin-page .admin-job strong {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--navy);
+}
+.admin-page .admin-job small {
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 7px;
+}
+.admin-page .admin-job .status {
+  font-size: 10px;
+  padding: 6px 9px;
+  margin: 0;
+}
+.admin-page .unread-indicator,
+.admin-page .tab-count {
+  background: var(--blue-ink);
+}
+.admin-page .needs-reply {
+  color: var(--blue-ink);
+}
+.admin-page .admin-detail {
+  scroll-margin-top: 24px;
+}
+.admin-page .admin-detail > h2 {
+  font-size: 29px;
+  margin: 14px 0;
+  line-height: 1.25;
+}
+.admin-page .admin-detail > .eyebrow {
+  font-size: 10px;
+}
+.admin-page .project-heading-status {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.admin-page .project-next-action {
+  background: var(--navy);
+  border: 1px solid var(--navy);
+  border-top: 2px solid var(--gold);
+  color: white;
+  padding: 23px;
+}
+.admin-page .project-next-action .eyebrow {
+  color: #e6cf7c;
+  font-size: 10px;
+}
+.admin-page .project-next-action strong {
+  font-size: 21px;
+  line-height: 1.4;
+}
+.admin-page .project-next-action p {
+  color: #d6dce8;
+  font-size: 13px;
+}
+.admin-page .project-next-action .button {
+  border-color: #7fa8ff60;
+  color: var(--light-blue);
+  background: #7fa8ff10;
+}
+.admin-page .project-next-action .button:hover {
+  background: #7fa8ff25;
+}
+.admin-page .project-tabs {
+  border-radius: 8px 8px 0 0;
+  gap: 0 20px;
+  padding: 0 15px;
+}
+.admin-page .project-tabs button {
+  color: var(--muted);
+}
+.admin-page .project-tabs button[aria-selected="true"] {
+  color: var(--blue-ink);
+  border-color: var(--primary);
+}
+.admin-page .contact-details {
+  font-size: 14px;
+  gap: 10px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.admin-page .contact-details a {
+  color: var(--blue-ink);
+}
+.admin-page .job-description {
+  background: #f8f9fc;
+  border: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 1.85;
+  padding: 20px;
+}
+.admin-page .project-section label {
+  font-size: 13px;
+}
+.admin-page .qualification-summary,
+.admin-page .pricing-calculator,
+.admin-page .customer-quote-preview {
+  background: #f8f9fc;
+  border-color: var(--line);
+  border-radius: 9px;
+  padding: 22px;
+}
+.admin-page .qualification-summary h3,
+.admin-page .pricing-calculator h3 {
+  font-size: 19px;
+}
+.admin-page .qualification-summary dd {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.admin-page .admin-invoice {
+  border-radius: 9px;
+  padding: 23px;
+  gap: 18px;
+}
+.admin-page .admin-invoice p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.admin-page .admin-invoice > div > strong {
+  font-size: 17px;
+  line-height: 1.5;
+}
+.admin-page .quote-state {
+  color: var(--blue-ink);
+}
+.admin-page .quote-state.paused {
+  color: #70500b;
+}
+.admin-page .project-payment-history li {
+  font-size: 13px;
+  padding: 18px 0;
+}
+.admin-page .activity-timeline li {
+  border-color: #c4d5f5;
+}
+.admin-page .activity-timeline time {
+  color: var(--muted);
+  font-size: 12px;
+}
+.admin-page .activity-timeline strong {
+  font-size: 14px;
+}
+.admin-page .activity-timeline p {
+  font-size: 14px;
+}
+.admin-page .empty-inline {
+  padding: 20px 12px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.admin-page .quote-total {
+  background: var(--pale);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+}
+.admin-page button:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+@media (max-width: 1000px) {
+  .admin-page .ops-summary {
+    gap: 12px;
+  }
+  .admin-page .ops-summary > button {
+    padding: 18px;
+  }
+  .admin-page .admin-grid {
+    grid-template-columns: minmax(250px, 0.8fr) minmax(0, 1.4fr);
+    gap: 18px;
+  }
+}
+@media (max-width: 900px) {
+  .admin-page .admin-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-page .request-list-panel {
+    max-height: 360px;
+  }
+  .admin-page .ops-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .admin-page {
+    padding-top: 28px;
+  }
+  .admin-page .ops-summary {
+    gap: 10px;
+  }
+  .admin-page .ops-summary > button {
+    padding: 16px;
+    gap: 14px;
+  }
+  .admin-page .queue-label {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .admin-page .queue-action {
+    font-size: 10px;
+  }
+  .admin-page .ops-summary strong {
+    font-size: 30px;
+  }
+  .admin-page .ops-toolbar {
+    padding: 16px;
+    gap: 16px;
+  }
+  .admin-page .ops-toolbar .button {
+    width: 100%;
+  }
+  .admin-page input,
+  .admin-page select,
+  .admin-page textarea {
+    font-size: 16px;
+    min-width: 0;
+  }
+  .admin-page > .metrics {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .admin-page .metrics > div {
+    padding: 19px;
+  }
+  .admin-page .metrics strong {
+    font-size: 29px;
+  }
+  .admin-page .panel {
+    padding: 21px 17px;
+  }
+  .admin-page .request-list-panel {
+    padding: 18px 9px 9px;
+  }
+  .admin-page .admin-detail > h2 {
+    font-size: 26px;
+  }
+  .admin-page .project-next-action {
+    padding: 19px;
+  }
+  .admin-page .project-next-action > div {
+    flex-basis: 100%;
+  }
+  .admin-page .project-next-action .button {
+    width: 100%;
+  }
+  .admin-page .project-tabs {
+    padding: 0 10px;
+    gap: 0 14px;
+  }
+  .admin-page .project-tabs button {
+    font-size: 11px;
+  }
+  .admin-page .admin-invoice,
+  .admin-page .qualification-summary,
+  .admin-page .pricing-calculator,
+  .admin-page .customer-quote-preview {
+    padding: 17px;
+  }
+}

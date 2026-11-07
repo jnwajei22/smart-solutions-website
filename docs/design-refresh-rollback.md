@@ -43,3 +43,10 @@ corresponding preserved commit. Avoid force-pushing `main` or repointing product
 as a way to change a preview. If approved and later released, rollback is a separate
 production action: inspect the then-current deployment and revert the design commit
 or promote the preserved production deployment after checking configuration.
+
+## Before the business dashboard refresh
+
+- Branch: `backup/preview-before-business-refresh`
+- Commit: `2b65736bdd0f1d56b02a0f068c6373431d522dad`
+- Keeps the completed client portal refresh before business dashboard queue and styling changes.
+- Production remains on its existing release; this checkpoint applies to the design preview only.
