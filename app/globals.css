@@ -99,8 +99,9 @@ svg {
 }
 .site-header {
   height: 92px;
-  background: var(--cream);
-  border-bottom: 1px solid var(--line);
+  background: var(--navy);
+  color: var(--white);
+  border-bottom: 2px solid var(--gold);
 }
 .nav {
   height: 100%;
@@ -737,8 +738,9 @@ main .text-link:hover,
   margin-bottom: 0;
 }
 .site-footer {
-  background: #0b0f1a;
+  background: var(--navy);
   color: #d6dce8;
+  border-top: 3px solid var(--gold);
   padding: 42px 0 22px;
 }
 .footer-top {

@@ -946,10 +946,44 @@
   font-size: 12px;
 }
 .site-footer .footer-top > p > a {
-  color: #e5ebf7;
+  color: var(--light-blue);
   display: inline-block;
   margin-top: 8px;
   font-size: 13px;
+}
+/* The navigation and footer share the commitment section's navy and gold frame. */
+.site-header .brand,
+.site-footer .brand {
+  color: var(--white);
+}
+.site-header .brand-mark,
+.site-footer .brand-mark {
+  color: var(--light-blue);
+}
+.site-header .brand-mark span,
+.site-footer .brand-mark span {
+  background: var(--gold);
+}
+.site-header .nav nav a {
+  color: var(--white);
+}
+.site-header .nav nav a:hover,
+.site-footer a:hover {
+  color: var(--light-blue);
+}
+.site-header .mobile-site-menu > button {
+  background: transparent;
+  border-color: #ffffff40;
+  color: var(--white);
+}
+.site-header .nav .mobile-site-menu nav {
+  background: var(--navy);
+  border-color: #ffffff30;
+  border-top-color: var(--gold);
+  box-shadow: 0 12px 30px #0b0f1a33;
+}
+.site-header .mobile-site-menu nav a:hover {
+  background: #ffffff0d;
 }
 @media (max-width: 1100px) {
   .marketing-hero {
