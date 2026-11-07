@@ -315,10 +315,16 @@ export function Portal({
           {!demo && (
             <button
               onClick={async () => {
-                await browserClient().auth.signOut();
-                // Discard every cached authenticated route after sign-out.
-                // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-                window.location.assign("/login");
+                setError("");
+                try {
+                  const { error } = await browserClient().auth.signOut();
+                  if (error) throw error;
+                  // Discard cached authenticated routes only after confirmed sign-out.
+                  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+                  window.location.assign("/login");
+                } catch {
+                  setError("We couldn’t sign you out. Please try again.");
+                }
               }}
             >
               <LogOut size={17} /> Sign out

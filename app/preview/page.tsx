@@ -40,5 +40,5 @@ export default async function Preview({
               })),
             }
           : demoData;
-  return <Portal data={data} demo scenario={scenario} />;
+  return <Portal key={scenario} data={data} demo scenario={scenario} />;
 }
