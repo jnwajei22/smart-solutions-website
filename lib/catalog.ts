@@ -1,14 +1,14 @@
 export const services = [
   {
     id: "cabling",
-    name: "Ethernet & structured cabling",
+    name: "Low-voltage cabling & commercial prewire",
     short: "A better connection starts here.",
     description:
-      "Thoughtful cable routes, clean terminations, wall plates, patch panels, labeling, and connection testing.",
+      "Ethernet cabling for homes and businesses, plus data and AV rough-in for office and retail buildouts. We route, label, terminate, and test connections to match the project scope.",
     details: [
-      "CAT6 cable runs & new data points",
-      "Jack repairs & terminations",
-      "Patch panels & clear labeling",
+      "Cat6 Ethernet runs, data drops & wall plates",
+      "Patch-panel termination, labeling & connection testing",
+      "Commercial prewire for data & AV",
     ],
     icon: "cable",
   },
@@ -40,14 +40,15 @@ export const services = [
   },
   {
     id: "tv",
-    name: "TV mounting & AV setup",
-    short: "Your space. A cleaner finish.",
+    name: "AV, paging & audio",
+    short: "Clear sound. A clean setup.",
     description:
-      "Considered placement, secure mounting, and tidy cable management for your TV and connected entertainment.",
+      "From a wall-mounted TV at home to overhead paging at work, we help set up displays and audio with tidy wiring and straightforward controls.",
     details: [
       "TV mounting on suitable surfaces",
-      "Streaming & audio setup",
-      "Surface cable management",
+      "Streaming setup & surface cable management",
+      "Speaker wiring & overhead paging",
+      "Standalone, voice-only intercoms",
     ],
     icon: "tv",
   },

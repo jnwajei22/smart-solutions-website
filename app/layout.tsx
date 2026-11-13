@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     template: "%s | DFW Smart Solutions",
   },
   description:
-    "Ethernet cabling, Wi-Fi, network organization, TV mounting, and smart-home project inquiries for homes and businesses across Dallas–Fort Worth.",
+    "Low-voltage cabling, commercial prewire, Wi-Fi, network racks, TV mounting, paging, audio, and smart-home services across Dallas–Fort Worth.",
 };
 export default function RootLayout({
   children,
